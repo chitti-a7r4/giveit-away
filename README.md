@@ -1,6 +1,6 @@
-# newapp
+# Giveit-away
 
-A new Flutter project.
+This is my personal project that I I'm working on, collaborations are welcome
 
 ## Getting Started
 
