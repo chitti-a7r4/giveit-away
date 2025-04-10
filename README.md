@@ -1,6 +1,6 @@
 # Giveit-away
 
-This is my personal project that I I'm working on, collaborations are welcome
+This is my personal project that I'm working on, collaborations are welcome
 
 ## Getting Started
 
