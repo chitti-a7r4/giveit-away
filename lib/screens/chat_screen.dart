@@ -9,10 +9,10 @@ class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key, required this.conversation});
 
   @override
-  _ChatScreenState createState() => _ChatScreenState();
+  ChatScreenState createState() => ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final List<ChatMessage> _messages = [
     ChatMessage(text: "Hi! I am interested in the vacuum cleaner you posted.", isSender: false),

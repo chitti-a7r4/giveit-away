@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:salomon_bottom_bar/salomon_bottom_bar.dart'; // Import Salomon Bottom Bar
+import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
+import 'package:firebase_core/firebase_core.dart';
+
+import 'firebase_options.dart';
 import 'screens/home_screen.dart';
 import 'screens/post_screen.dart';
 import 'screens/profile_screen.dart';
-import 'screens/chat_list_screen.dart'; // Import the ChatListScreen
+import 'screens/chat_list_screen.dart';
+import 'screens/login_screen.dart'; // Add this
 
-void main() {
-  runApp(GiveItAwayApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(const GiveItAwayApp());
 }
 
 class GiveItAwayApp extends StatelessWidget {
@@ -22,7 +30,24 @@ class GiveItAwayApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MainScreen(),
+      home: const LoginScreenWrapper(), // Show login screen first
+    );
+  }
+}
+
+// A wrapper that navigates to MainScreen after login
+class LoginScreenWrapper extends StatelessWidget {
+  const LoginScreenWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return LoginScreen(
+      onLoginSuccess: () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+        );
+      },
     );
   }
 }
@@ -40,7 +65,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = [
     HomeScreen(),
     PostScreen(),
-    ChatListScreen(),  // Updated to use ChatListScreen
+    ChatListScreen(),
     ProfileScreen(),
   ];
 
@@ -59,23 +84,23 @@ class _MainScreenState extends State<MainScreen> {
         onTap: _onNavItemTapped,
         items: [
           SalomonBottomBarItem(
-            icon: Icon(Icons.home),
-            title: Text("Home"),
+            icon: const Icon(Icons.home),
+            title: const Text("Home"),
             selectedColor: Colors.blue,
           ),
           SalomonBottomBarItem(
-            icon: Icon(Icons.add_circle_outline),
-            title: Text("Post"),
+            icon: const Icon(Icons.add_circle_outline),
+            title: const Text("Post"),
             selectedColor: Colors.green,
           ),
           SalomonBottomBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            title: Text("Chat"),
+            icon: const Icon(Icons.chat_bubble_outline),
+            title: const Text("Chat"),
             selectedColor: Colors.orange,
           ),
           SalomonBottomBarItem(
-            icon: Icon(Icons.person_outline),
-            title: Text("Profile"),
+            icon: const Icon(Icons.person_outline),
+            title: const Text("Profile"),
             selectedColor: Colors.purple,
           ),
         ],

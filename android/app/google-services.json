@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "553448506117",
+    "project_id": "giveit-away-5ebfb",
+    "storage_bucket": "giveit-away-5ebfb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:553448506117:android:283201c87fc6363525ed6c",
+        "android_client_info": {
+          "package_name": "com.example.newapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoOKhY0DNzn1d9fp_MyT6FKuN_xe1s_tw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

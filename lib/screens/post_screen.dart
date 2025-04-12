@@ -1,25 +1,57 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:logger/logger.dart';
+
+final Logger _logger = Logger();
 
 class PostScreen extends StatefulWidget {
   const PostScreen({super.key});
 
   @override
-  _PostScreenState createState() => _PostScreenState();
+  State<PostScreen> createState() => _PostScreenState();
 }
 
 class _PostScreenState extends State<PostScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _itemName = '';
-  String _description = '';
-  String _category = '';
-  
-  // This is just a placeholder for form submission logic
-  void _submitForm() {
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  File? _selectedImage;
+  final picker = ImagePicker();
+
+  Future<void> _pickImage() async {
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() => _selectedImage = File(pickedFile.path));
+      _logger.i("Image selected: ${pickedFile.path}");
+    }
+  }
+
+  void _submitPost() {
     if (_formKey.currentState!.validate()) {
-      // Normally, you would send this data to your backend or save it in a database
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Item Posted!')));
-      // Clear the form
-      _formKey.currentState!.reset();
+      if (_selectedImage == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please select an image.")),
+        );
+        return;
+      }
+
+      // Logging user input
+      _logger.i('Title: ${_titleController.text}');
+      _logger.i('Description: ${_descriptionController.text}');
+      _logger.i('Image path: ${_selectedImage!.path}');
+
+      // Simulate success
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Item posted successfully!")),
+      );
+
+      // Clear inputs
+      _titleController.clear();
+      _descriptionController.clear();
+      setState(() {
+        _selectedImage = null;
+      });
     }
   }
 
@@ -27,73 +59,84 @@ class _PostScreenState extends State<PostScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Post an Item'),
-        backgroundColor: Colors.blueAccent,
+        title: const Text("Post an Item"),
+        backgroundColor: Colors.green,
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Post Your Donation',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 20),
+              // Title Field
               TextFormField(
-                decoration: InputDecoration(labelText: 'Item Name'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the item name';
-                  }
-                  return null;
-                },
-                onChanged: (value) {
-                  setState(() {
-                    _itemName = value;
-                  });
-                },
-              ),
-              SizedBox(height: 10),
-              TextFormField(
-                decoration: InputDecoration(labelText: 'Description'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a description';
-                  }
-                  return null;
-                },
-                onChanged: (value) {
-                  setState(() {
-                    _description = value;
-                  });
-                },
-              ),
-              SizedBox(height: 10),
-              TextFormField(
-                decoration: InputDecoration(labelText: 'Category (e.g., Clothes, Electronics)'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a category';
-                  }
-                  return null;
-                },
-                onChanged: (value) {
-                  setState(() {
-                    _category = value;
-                  });
-                },
-              ),
-              SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: _submitForm,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  textStyle: TextStyle(fontSize: 18),
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Title',
+                  prefixIcon: Icon(Icons.title),
+                  border: OutlineInputBorder(),
                 ),
-                child: Text('Post Donation'),
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Please enter a title' : null,
+              ),
+              const SizedBox(height: 20),
+
+              // Description Field
+              TextFormField(
+                controller: _descriptionController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  prefixIcon: Icon(Icons.description),
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Please enter a description' : null,
+              ),
+              const SizedBox(height: 20),
+
+              // Image Picker
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  width: double.infinity,
+                  height: 180,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.grey[200],
+                  ),
+                  child: _selectedImage == null
+                      ? const Center(child: Text("Tap to select an image"))
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            _selectedImage!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 30),
+
+              // Submit Button
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _submitPost,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    "Post Item",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
               ),
             ],
           ),
@@ -102,3 +145,4 @@ class _PostScreenState extends State<PostScreen> {
     );
   }
 }
+  
