@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';  // Add Google Sign-In import
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'register_screen.dart';  // Import RegisterScreen
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -21,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return; // User canceled
+      if (googleUser == null) return;
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
@@ -31,13 +32,21 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       await FirebaseAuth.instance.signInWithCredential(credential);
-
-      widget.onLoginSuccess(); // Navigate to main screen
+      widget.onLoginSuccess();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Google Sign-In failed: $e")),
       );
     }
+  }
+
+  void _navigateToRegister() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RegisterScreen(onRegisterSuccess: widget.onLoginSuccess),
+      ),
+    );
   }
 
   @override
@@ -82,7 +91,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
-                              _obscureText ? Icons.visibility : Icons.visibility_off),
+                            _obscureText ? Icons.visibility : Icons.visibility_off,
+                          ),
                           onPressed: () => setState(() => _obscureText = !_obscureText),
                         ),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -93,28 +103,42 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 30),
 
                     // Login Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            // TODO: Add Email/Password login logic
-                            widget.onLoginSuccess();
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          "Login",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
+// Login Button
+SizedBox(
+  width: double.infinity,
+  height: 48,
+  child: ElevatedButton(
+    onPressed: () async {
+      if (_formKey.currentState!.validate()) {
+        try {
+          // Attempt to sign in with email and password
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+
+          // Navigate to HomeScreen on successful login
+          widget.onLoginSuccess();
+        } catch (e) {
+          // Show an error message if login fails
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Login failed: ${e.toString()}")),
+          );
+        }
+      }
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.black,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+    child: const Text(
+      "Login",
+      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    ),
+  ),
+),
                     const SizedBox(height: 15),
 
                     const Divider(height: 32),
@@ -135,14 +159,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 20),
 
+                    // Sign-up link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Text("Don’t have an account? "),
                         TextButton(
-                          onPressed: () {
-                            // Navigate to signup screen if implemented
-                          },
+                          onPressed: _navigateToRegister,  // Navigate to RegisterScreen
                           child: const Text("Sign up"),
                         ),
                       ],

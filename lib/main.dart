@@ -7,7 +7,7 @@ import 'screens/home_screen.dart';
 import 'screens/post_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/chat_list_screen.dart';
-import 'screens/login_screen.dart'; // Add this
+import 'screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,12 +30,16 @@ class GiveItAwayApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const LoginScreenWrapper(), // Show login screen first
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => const LoginScreenWrapper(),
+        '/main': (context) => const MainScreen(),
+      },
     );
   }
 }
 
-// A wrapper that navigates to MainScreen after login
+// Wrapper to show login screen first
 class LoginScreenWrapper extends StatelessWidget {
   const LoginScreenWrapper({super.key});
 
@@ -43,15 +47,13 @@ class LoginScreenWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     return LoginScreen(
       onLoginSuccess: () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
-        );
+        Navigator.pushReplacementNamed(context, '/main');
       },
     );
   }
 }
 
+// Main App screen with bottom navigation
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 

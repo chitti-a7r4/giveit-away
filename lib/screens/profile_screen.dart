@@ -1,70 +1,118 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
+  void _showSettingsMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Wrap(
+            runSpacing: 15,
+            children: [
+              const Center(
+                child: Text(
+                  'Settings',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('Edit Profile'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Navigate to Edit Profile screen
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Edit Profile tapped")),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.help_outline),
+                title: const Text('Help & Support'),
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Help & Support tapped")),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('Logout'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await FirebaseAuth.instance.signOut();
+                  Navigator.pushReplacementNamed(context, '/login'); // Adjust this route to match your login route
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100], // Light background
+      backgroundColor: Colors.grey[100],
       body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 30),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Top bar with settings icon
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                const Text(
                   'Your Profile',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
-                Icon(Icons.settings, size: 24), // Settings icon
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () => _showSettingsMenu(context),
+                ),
               ],
             ),
-            SizedBox(height: 20),
-            Center(
+            const SizedBox(height: 20),
+            const Center(
               child: CircleAvatar(
                 radius: 50,
-                backgroundImage: AssetImage('assets/profile_pic.png'), // Replace with user's profile picture
+                backgroundImage: AssetImage('assets/profile_pic.png'),
               ),
             ),
-            SizedBox(height: 15),
-            Center(
+            const SizedBox(height: 15),
+            const Center(
               child: Text(
-                'Shiva', // User's name
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                'Shiva',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Center(
               child: Text(
-                'Bio: Giving back to the community through small acts of kindness.', // User's bio
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[700],
-                ),
+                'Bio: Giving back to the community through small acts of kindness.',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
             ),
-            SizedBox(height: 30),
-            Text(
+            const SizedBox(height: 30),
+            const Text(
               'Your Donations',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Expanded(
               child: ListView(
-                children: [
+                children: const [
                   DonationCard(
                     title: 'Vaccum Cleaner',
                     category: 'Appliances',
@@ -99,14 +147,14 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-// Widget for donation card
 class DonationCard extends StatelessWidget {
   final String title;
   final String category;
   final String location;
   final String imagePath;
 
-  const DonationCard({super.key, 
+  const DonationCard({
+    super.key,
     required this.title,
     required this.category,
     required this.location,
@@ -116,15 +164,15 @@ class DonationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        contentPadding: EdgeInsets.all(12),
+        contentPadding: const EdgeInsets.all(12),
         leading: Image.asset(imagePath, width: 50, height: 50),
-        title: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         subtitle: Text('$category\n$location', style: TextStyle(fontSize: 14, color: Colors.grey[700])),
         trailing: Container(
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: Colors.green[100],
             borderRadius: BorderRadius.circular(12),
