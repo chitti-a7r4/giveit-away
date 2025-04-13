@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 
 class ItemViewScreen extends StatelessWidget {
   final String itemName;
   final String description;
   final String category;
   final String contactInfo;
-  final String imageUrl;
+  final String location;  // Location of the item
+  final List<String> imageUrls;  // List of image URLs
 
-  const ItemViewScreen({super.key, 
+  const ItemViewScreen({
+    super.key,
     required this.itemName,
     required this.description,
     required this.category,
     required this.contactInfo,
-    required this.imageUrl,
+    required this.imageUrls,
+    required this.location
   });
 
   @override
@@ -23,63 +27,82 @@ class ItemViewScreen extends StatelessWidget {
         backgroundColor: const Color.fromARGB(255, 166, 215, 67),
         actions: [
           IconButton(
-            icon: Icon(Icons.share),
+            icon: const Icon(Icons.share),
             onPressed: () {
-              // Add share functionality here
+              // TODO: Add share functionality
             },
           ),
         ],
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Image.asset(
-                imageUrl,
-                width: 200,
-                height: 200,
-                fit: BoxFit.cover,
+            // Carousel of images
+            CarouselSlider(
+              options: CarouselOptions(
+                height: 250,
+                enlargeCenterPage: true,
+                autoPlay: true,
+                aspectRatio: 16/9,
+                viewportFraction: 0.8,
               ),
+              items: imageUrls.map((url) {
+                return Builder(
+                  builder: (BuildContext context) {
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        url,
+                        width: MediaQuery.of(context).size.width,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset('assets/images/placeholder.png', width: 200, height: 200);
+                        },
+                      ),
+                    );
+                  },
+                );
+              }).toList(),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Text(
               itemName,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Text(
               'Category: $category',
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Text(
-              'Location: $contactInfo',
+              'Location: $location',
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
-            SizedBox(height: 20),
-            Text(
+            const SizedBox(height: 20),
+            const Text(
               'Description',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Text(
               description,
-              style: TextStyle(fontSize: 16, color: Colors.black),
+              style: const TextStyle(fontSize: 16, color: Colors.black),
             ),
-            SizedBox(height: 30),
-            ElevatedButton(
+            const SizedBox(height: 30),
+            ElevatedButton.icon(
               onPressed: () {
-                // Handle contact action (e.g., show a dialog or call a contact function)
+                // TODO: Add contact action
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    Colors.green, // Use backgroundColor instead of primary
-                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                textStyle: TextStyle(fontSize: 16),
+                backgroundColor: Colors.green,
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                textStyle: const TextStyle(fontSize: 16),
               ),
-              child: Text('Contact Donator'),
+              icon: const Icon(Icons.message),
+              label: const Text('Contact Donator'),
             ),
           ],
         ),

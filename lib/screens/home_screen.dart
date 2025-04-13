@@ -1,133 +1,47 @@
 import 'package:flutter/material.dart';
-import 'item_view_screen.dart'; // Import the ItemViewScreen
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'item_view_screen.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100], // Light background
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 30),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'giveIT-away',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Icon(Icons.lock_outline, size: 24),
-              ],
-            ),
-            SizedBox(height: 15),
-            Text(
-              'Give things away easily',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 20),
-            Expanded(
-              child: ListView(
-                children: [
-                  DonationCard(
-                    title: 'Vacuum Cleaner',
-                    category: 'Appliances',
-                    location: 'Nagpur',
-                    imagePath: 'assets/vaccum.png',
-                    onTap: () {
-                      _navigateToItemView(context, 'Vacuum Cleaner', 'A powerful vacuum cleaner.', 'Appliances', 'Nagpur', 'assets/vaccum.png');
-                    },
-                  ),
-                  DonationCard(
-                    title: 'T-shirt',
-                    category: 'Clothing',
-                    location: 'Mumbai',
-                    imagePath: 'assets/tshirt.png',
-                    onTap: () {
-                      _navigateToItemView(context, 'T-shirt', 'A gently used cotton T-shirt.', 'Clothing', 'Mumbai', 'assets/tshirt.png');
-                    },
-                  ),
-                  DonationCard(
-                    title: 'Desk Lamp',
-                    category: 'Household',
-                    location: 'Delhi',
-                    imagePath: 'assets/lamp.png',
-                    onTap: () {
-                      _navigateToItemView(context, 'Desk Lamp', 'A stylish desk lamp for your workspace.', 'Household', 'Delhi', 'assets/lamp.png');
-                    },
-                  ),
-                  DonationCard(
-                    title: 'Chocolate Bar',
-                    category: 'Food',
-                    location: 'Kolkata',
-                    imagePath: 'assets/chocolate.png',
-                    onTap: () {
-                      _navigateToItemView(context, 'Chocolate Bar', 'A delicious chocolate bar.', 'Food', 'Kolkata', 'assets/chocolate.png');
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Navigate to ItemViewScreen
-  void _navigateToItemView(BuildContext context, String title, String description, String category, String location, String imagePath) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ItemViewScreen(
-          itemName: title,
-          description: description,
-          category: category,
-          contactInfo: location,
-          imageUrl: imagePath,
-        ),
-      ),
-    );
-  }
-}
-
-// Widget for donation card
+// 🔼 Custom widget for each donation item card
 class DonationCard extends StatelessWidget {
   final String title;
   final String category;
   final String location;
   final String imagePath;
-  final VoidCallback onTap; // Add a callback for tap action
+  final VoidCallback onTap;
 
-  const DonationCard({super.key, 
+  const DonationCard({
+    super.key,
     required this.title,
     required this.category,
     required this.location,
     required this.imagePath,
-    required this.onTap, // Add the onTap callback to the constructor
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        contentPadding: EdgeInsets.all(12),
-        leading: Image.asset(imagePath, width: 50, height: 50),
-        title: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        contentPadding: const EdgeInsets.all(12),
+        leading: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            imagePath.isNotEmpty ? imagePath : 'https://via.placeholder.com/50',
+            width: 50,
+            height: 50,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Image.asset('assets/images/placeholder.png', width: 50, height: 50);
+            },
+          ),
+        ),
+        title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         subtitle: Text('$category\n$location', style: TextStyle(fontSize: 14, color: Colors.grey[700])),
         trailing: Container(
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: Colors.green[100],
             borderRadius: BorderRadius.circular(12),
@@ -137,7 +51,93 @@ class DonationCard extends StatelessWidget {
             style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold),
           ),
         ),
-        onTap: onTap, // Handle the tap action to navigate
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+// 🔽 HomeScreen widget
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 30),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top Bar
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [
+                Text(
+                  'giveIT-away',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                Icon(Icons.lock_outline, size: 24),
+              ],
+            ),
+            const SizedBox(height: 15),
+            const Text(
+              'Give things away easily',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+
+            // 🔄 Fetch and display posts from Firestore
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance.collection('posts').orderBy('timestamp', descending: true).snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(child: Text('No items available yet.'));
+                  }
+
+                  return ListView(
+                    children: snapshot.data!.docs.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+
+                      final imagePath = data['images'] != null && data['images'].isNotEmpty
+                          ? data['images'][0]
+                          : '';
+
+                      return DonationCard(
+                        title: data['title'] ?? 'No Title',
+                        category: data['category'] ?? 'Unknown',
+                        location: data['location'] ?? 'Unknown',
+                        imagePath: imagePath,
+                        onTap: () {
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => ItemViewScreen(
+      itemName: data['title'] ?? '',
+      description: data['description'] ?? '',
+      category: data['category'] ?? '',
+      contactInfo: data['contactInfo'] ?? '',
+      location: data['location'] ?? '',
+      imageUrls: List<String>.from(data['images'] ?? []),  // Pass images as a list
+    ),
+  ),
+);
+
+                        },
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

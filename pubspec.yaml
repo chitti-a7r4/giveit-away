@@ -46,7 +46,9 @@ dependencies:
   geolocator: ^13.0.4
   geocoding: ^3.0.0
   image: ^4.5.4
-
+  firebase_app_check: ^0.3.2+5
+  smooth_page_indicator: ^1.2.1
+  carousel_slider: ^5.0.0
 
 dev_dependencies:
   flutter_test:

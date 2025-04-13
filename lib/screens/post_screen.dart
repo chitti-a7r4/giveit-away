@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:image/image.dart' as img;  // Image package for compression
 
 final Logger _logger = Logger();
 
@@ -20,18 +22,75 @@ class _PostScreenState extends State<PostScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
-  File? _selectedImage;
-  final picker = ImagePicker();
   final FirebaseStorage _storage = FirebaseStorage.instance;
+  File? _selectedImage1;
+  File? _selectedImage2;
+  File? _selectedImage3;
+  final picker = ImagePicker();
 
-  Future<void> _pickImage() async {
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() => _selectedImage = File(pickedFile.path));
-      _logger.i("Image selected: ${pickedFile.path}");
+  String? _category;
+  final List<String> _categories = ['Electronics', 'Furniture', 'Clothing', 'Books', 'Others'];
+
+  // Function to pick images from gallery
+  Future<void> _pickImages() async {
+    final pickedFiles = await picker.pickMultiImage();
+    setState(() {
+      if (pickedFiles.length > 0) {
+        _selectedImage1 = File(pickedFiles[0].path);
+      }
+      if (pickedFiles.length > 1) {
+        _selectedImage2 = File(pickedFiles[1].path);
+      }
+      if (pickedFiles.length > 2) {
+        _selectedImage3 = File(pickedFiles[2].path);
+      }
+    });
+    }
+
+  // Function to compress the image
+  Future<File?> _compressImage(File image) async {
+    try {
+      img.Image? imageFile = img.decodeImage(image.readAsBytesSync());
+      if (imageFile == null) {
+        _logger.e("Error decoding image");
+        return null;
+      }
+
+      img.Image compressedImage = img.copyResize(imageFile, width: 800);
+      List<int> compressedImageBytes = img.encodeJpg(compressedImage, quality: 80);
+
+      File compressedFile = File(image.path)..writeAsBytesSync(compressedImageBytes);
+      return compressedFile;
+    } catch (e) {
+      _logger.e("Error compressing image: $e");
+      return null;
     }
   }
 
+  // Function to upload the image to Firebase Storage
+  Future<String?> _uploadImage(File image) async {
+    try {
+      File? compressedImage = await _compressImage(image);
+      if (compressedImage == null) {
+        _logger.e("Failed to compress image.");
+        return null;
+      }
+
+      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+      Reference storageReference = _storage.ref().child('images/$fileName');
+
+      UploadTask uploadTask = storageReference.putFile(compressedImage);
+      TaskSnapshot snapshot = await uploadTask;
+
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      _logger.e("Error uploading image: $e");
+      return null;
+    }
+  }
+
+  // Function to get location
   Future<void> _getLocation() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
@@ -63,66 +122,71 @@ class _PostScreenState extends State<PostScreen> {
     }
   }
 
-  // Function to upload the selected image to Firebase Storage
-  Future<String?> _uploadImage(File image) async {
-    try {
-      // Generate a unique filename using current time
-      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
-      Reference storageReference = _storage.ref().child('images/$fileName');
-
-      // Upload the image
-      UploadTask uploadTask = storageReference.putFile(image);
-      TaskSnapshot snapshot = await uploadTask;
-
-      // Get and return the download URL
-      String downloadUrl = await snapshot.ref.getDownloadURL();
-      return downloadUrl;
-    } catch (e) {
-      _logger.e("Error uploading image: $e");
-      return null;
-    }
-  }
-
+  // Function to submit the post
   void _submitPost() async {
     if (_formKey.currentState!.validate()) {
-      if (_selectedImage == null) {
+      if (_category == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please select an image.")),
+          const SnackBar(content: Text("Please select a category.")),
         );
         return;
       }
 
-      if (_locationController.text.isEmpty) {
+      if (_selectedImage1 == null && _selectedImage2 == null && _selectedImage3 == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please get your location.")),
+          const SnackBar(content: Text("Please select at least one image.")),
         );
         return;
       }
 
-      // Upload image to Firebase Storage
-      String? imageUrl = await _uploadImage(_selectedImage!);
+      List<String> imageUrls = [];
+      if (_selectedImage1 != null) {
+        String? imageUrl1 = await _uploadImage(_selectedImage1!);
+        if (imageUrl1 != null) imageUrls.add(imageUrl1);
+      }
+      if (_selectedImage2 != null) {
+        String? imageUrl2 = await _uploadImage(_selectedImage2!);
+        if (imageUrl2 != null) imageUrls.add(imageUrl2);
+      }
+      if (_selectedImage3 != null) {
+        String? imageUrl3 = await _uploadImage(_selectedImage3!);
+        if (imageUrl3 != null) imageUrls.add(imageUrl3);
+      }
 
-      if (imageUrl != null) {
-        // Logging user input and image URL
-        _logger.i('Title: ${_titleController.text}');
-        _logger.i('Description: ${_descriptionController.text}');
-        _logger.i('Location: ${_locationController.text}');
-        _logger.i('Image URL: $imageUrl');
+      // Save post details in Firestore
+      try {
+try {
+  await FirebaseFirestore.instance.collection('posts').add({
+    'title': _titleController.text,
+    'description': _descriptionController.text,
+    'category': _category,
+    'location': _locationController.text,
+    'images': imageUrls,
+    'timestamp': FieldValue.serverTimestamp(),
+  });
+
+  _logger.i("Post saved successfully!");
+} catch (e) {
+  _logger.e("Error saving post to Firestore: $e");
+}
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Item posted successfully!")),
         );
 
-        // Clear inputs
         _titleController.clear();
         _descriptionController.clear();
         _locationController.clear();
         setState(() {
-          _selectedImage = null;
+          _category = null;
+          _selectedImage1 = null;
+          _selectedImage2 = null;
+          _selectedImage3 = null;
         });
-      } else {
+      } catch (e) {
+        _logger.e("Error saving post to Firestore: $e");
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Image upload failed. Please try again.")),
+          const SnackBar(content: Text("Error posting item. Please try again.")),
         );
       }
     }
@@ -168,10 +232,33 @@ class _PostScreenState extends State<PostScreen> {
               ),
               const SizedBox(height: 20),
 
+              // Category Dropdown
+              DropdownButtonFormField<String>(
+                value: _category,
+                decoration: const InputDecoration(
+                  labelText: 'Category',
+                  prefixIcon: Icon(Icons.category),
+                  border: OutlineInputBorder(),
+                ),
+                items: _categories.map((String category) {
+                  return DropdownMenuItem<String>(
+                    value: category,
+                    child: Text(category),
+                  );
+                }).toList(),
+                onChanged: (newCategory) {
+                  setState(() {
+                    _category = newCategory;
+                  });
+                },
+                validator: (value) =>
+                    value == null ? 'Please select a category' : null,
+              ),
+              const SizedBox(height: 20),
+
               // Location Field
               TextFormField(
                 controller: _locationController,
-                readOnly: true,
                 decoration: const InputDecoration(
                   labelText: 'Location',
                   prefixIcon: Icon(Icons.location_on_outlined),
@@ -193,7 +280,7 @@ class _PostScreenState extends State<PostScreen> {
 
               // Image Picker
               GestureDetector(
-                onTap: _pickImage,
+                onTap: _pickImages,
                 child: Container(
                   width: double.infinity,
                   height: 180,
@@ -202,15 +289,31 @@ class _PostScreenState extends State<PostScreen> {
                     borderRadius: BorderRadius.circular(12),
                     color: Colors.grey[200],
                   ),
-                  child: _selectedImage == null
-                      ? const Center(child: Text("Tap to select an image"))
-                      : ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            _selectedImage!,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
+                  child: _selectedImage1 == null && _selectedImage2 == null && _selectedImage3 == null
+                      ? const Center(child: Text("Tap to select images"))
+                      : GridView(
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 8.0,
+                            mainAxisSpacing: 8.0,
                           ),
+                          children: [
+                            if (_selectedImage1 != null)
+                              Image.file(
+                                _selectedImage1!,
+                                fit: BoxFit.cover,
+                              ),
+                            if (_selectedImage2 != null)
+                              Image.file(
+                                _selectedImage2!,
+                                fit: BoxFit.cover,
+                              ),
+                            if (_selectedImage3 != null)
+                              Image.file(
+                                _selectedImage3!,
+                                fit: BoxFit.cover,
+                              ),
+                          ],
                         ),
                 ),
               ),
