@@ -17,19 +17,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  Future<void> _registerWithEmailPassword() async {
-    try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-      widget.onRegisterSuccess(); // Call the callback to notify successful registration
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Registration failed: $e")),
-      );
+Future<void> _registerWithEmailPassword() async {
+  try {
+    await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
+    widget.onRegisterSuccess();
+  } on FirebaseAuthException catch (e) {
+    String message = "Registration failed. Please try again.";
+
+    if (e.code == 'email-already-in-use') {
+      message = "This email is already registered. Please log in instead.";
+    } else if (e.code == 'invalid-email') {
+      message = "The email address is not valid.";
+    } else if (e.code == 'weak-password') {
+      message = "The password is too weak. Use at least 6 characters.";
+    } else if (e.code == 'operation-not-allowed') {
+      message = "Email/password registration is currently disabled.";
+
     }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Something went wrong. Please try again.")),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {

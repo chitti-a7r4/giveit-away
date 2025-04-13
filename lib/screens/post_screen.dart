@@ -1,7 +1,10 @@
 import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 final Logger _logger = Logger();
 
@@ -16,8 +19,10 @@ class _PostScreenState extends State<PostScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
   File? _selectedImage;
   final picker = ImagePicker();
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   Future<void> _pickImage() async {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -27,7 +32,58 @@ class _PostScreenState extends State<PostScreen> {
     }
   }
 
-  void _submitPost() {
+  Future<void> _getLocation() async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        permission = await Geolocator.requestPermission();
+        if (permission != LocationPermission.always && permission != LocationPermission.whileInUse) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Location permission denied.")),
+          );
+          return;
+        }
+      }
+
+      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+      Placemark place = placemarks[0];
+      String address = "${place.locality}, ${place.administrativeArea}, ${place.country}";
+
+      _logger.i("Fetched location: $address");
+
+      setState(() {
+        _locationController.text = address;
+      });
+    } catch (e) {
+      _logger.e("Error getting location: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Unable to get location. Try again.")),
+      );
+    }
+  }
+
+  // Function to upload the selected image to Firebase Storage
+  Future<String?> _uploadImage(File image) async {
+    try {
+      // Generate a unique filename using current time
+      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+      Reference storageReference = _storage.ref().child('images/$fileName');
+
+      // Upload the image
+      UploadTask uploadTask = storageReference.putFile(image);
+      TaskSnapshot snapshot = await uploadTask;
+
+      // Get and return the download URL
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      _logger.e("Error uploading image: $e");
+      return null;
+    }
+  }
+
+  void _submitPost() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedImage == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -36,22 +92,39 @@ class _PostScreenState extends State<PostScreen> {
         return;
       }
 
-      // Logging user input
-      _logger.i('Title: ${_titleController.text}');
-      _logger.i('Description: ${_descriptionController.text}');
-      _logger.i('Image path: ${_selectedImage!.path}');
+      if (_locationController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please get your location.")),
+        );
+        return;
+      }
 
-      // Simulate success
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Item posted successfully!")),
-      );
+      // Upload image to Firebase Storage
+      String? imageUrl = await _uploadImage(_selectedImage!);
 
-      // Clear inputs
-      _titleController.clear();
-      _descriptionController.clear();
-      setState(() {
-        _selectedImage = null;
-      });
+      if (imageUrl != null) {
+        // Logging user input and image URL
+        _logger.i('Title: ${_titleController.text}');
+        _logger.i('Description: ${_descriptionController.text}');
+        _logger.i('Location: ${_locationController.text}');
+        _logger.i('Image URL: $imageUrl');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Item posted successfully!")),
+        );
+
+        // Clear inputs
+        _titleController.clear();
+        _descriptionController.clear();
+        _locationController.clear();
+        setState(() {
+          _selectedImage = null;
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Image upload failed. Please try again.")),
+        );
+      }
     }
   }
 
@@ -92,6 +165,29 @@ class _PostScreenState extends State<PostScreen> {
                 ),
                 validator: (value) =>
                     value == null || value.isEmpty ? 'Please enter a description' : null,
+              ),
+              const SizedBox(height: 20),
+
+              // Location Field
+              TextFormField(
+                controller: _locationController,
+                readOnly: true,
+                decoration: const InputDecoration(
+                  labelText: 'Location',
+                  prefixIcon: Icon(Icons.location_on_outlined),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Get Location Button
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: _getLocation,
+                  icon: const Icon(Icons.my_location),
+                  label: const Text("Use My Location"),
+                ),
               ),
               const SizedBox(height: 20),
 
@@ -145,4 +241,3 @@ class _PostScreenState extends State<PostScreen> {
     );
   }
 }
-  

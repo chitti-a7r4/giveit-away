@@ -110,21 +110,34 @@ SizedBox(
   child: ElevatedButton(
     onPressed: () async {
       if (_formKey.currentState!.validate()) {
-        try {
-          // Attempt to sign in with email and password
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text.trim(),
-          );
+try {
+  await FirebaseAuth.instance.signInWithEmailAndPassword(
+    email: _emailController.text.trim(),
+    password: _passwordController.text.trim(),
+  );
+  widget.onLoginSuccess();
+} on FirebaseAuthException catch (e) {
+  String message = "Login failed. Please try again.";
 
-          // Navigate to HomeScreen on successful login
-          widget.onLoginSuccess();
-        } catch (e) {
-          // Show an error message if login fails
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Login failed: ${e.toString()}")),
-          );
-        }
+  if (e.code == 'user-not-found') {
+    message = "No account found for this email.";
+  } else if (e.code == 'wrong-password') {
+    message = "Incorrect password.";
+  } else if (e.code == 'invalid-email') {
+    message = "Invalid email format.";
+  } else if (e.code == 'user-disabled') {
+    message = "This account has been disabled.";
+  }
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message)),
+  );
+} catch (e) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text("Something went wrong. Try again.")),
+  );
+}
+
       }
     },
     style: ElevatedButton.styleFrom(

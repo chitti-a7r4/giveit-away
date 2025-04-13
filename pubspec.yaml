@@ -43,6 +43,9 @@ dependencies:
   firebase_storage: ^12.4.5
   google_sign_in: ^6.3.0
   logger: ^2.0.2
+  geolocator: ^13.0.4
+  geocoding: ^3.0.0
+  image: ^4.5.4
 
 
 dev_dependencies:

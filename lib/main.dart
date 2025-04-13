@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'firebase_options.dart';
 import 'screens/home_screen.dart';
@@ -30,30 +31,44 @@ class GiveItAwayApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      initialRoute: '/login',
-      routes: {
-        '/login': (context) => const LoginScreenWrapper(),
-        '/main': (context) => const MainScreen(),
-      },
+      home: const AuthGate(),
     );
   }
 }
 
-// Wrapper to show login screen first
-class LoginScreenWrapper extends StatelessWidget {
-  const LoginScreenWrapper({super.key});
+/// Check if user is already signed in
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return LoginScreen(
-      onLoginSuccess: () {
-        Navigator.pushReplacementNamed(context, '/main');
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // Show splash/loading
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        } else if (snapshot.hasData) {
+          // User is signed in
+          return const MainScreen();
+        } else {
+          // User is not signed in
+          return LoginScreen(
+            onLoginSuccess: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const MainScreen()),
+              );
+            },
+          );
+        }
       },
     );
   }
 }
 
-// Main App screen with bottom navigation
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -65,10 +80,10 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    HomeScreen(),
-    PostScreen(),
+    const HomeScreen(),
+    const PostScreen(),
     ChatListScreen(),
-    ProfileScreen(),
+    const ProfileScreen(),
   ];
 
   void _onNavItemTapped(int index) {
