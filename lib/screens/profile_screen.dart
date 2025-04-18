@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -37,10 +38,7 @@ class ProfileScreen extends StatelessWidget {
                 leading: const Icon(Icons.help_outline),
                 title: const Text('Help & Support'),
                 onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Help & Support tapped")),
-                  );
+                  context.go('/post');
                 },
               ),
               ListTile(

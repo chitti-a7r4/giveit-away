@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';  // Add Google Sign-In import
 import 'package:firebase_auth/firebase_auth.dart';
-import 'register_screen.dart';  // Import RegisterScreen
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'register_screen.dart';
+import 'setup_profile_screen.dart';  // Import RegisterScreen
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -19,26 +21,46 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  Future<void> _signInWithGoogle() async {
-    try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return;
+Future<void> _signInWithGoogle() async {
+  try {
+    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+    if (googleUser == null) return;
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
 
-      await FirebaseAuth.instance.signInWithCredential(credential);
-      widget.onLoginSuccess();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Google Sign-In failed: $e")),
-      );
+    final UserCredential userCredential =
+        await FirebaseAuth.instance.signInWithCredential(credential);
+    final user = userCredential.user;
+
+    if (user != null) {
+      // Check if user data exists in Firestore
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (!userDoc.exists) {
+        // First-time login, go to setup screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const SetupProfileScreen()),
+        );
+      } else {
+        // Existing user, continue as normal
+        widget.onLoginSuccess();
+      }
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Google Sign-In failed: $e")),
+    );
   }
+}
 
   void _navigateToRegister() {
     Navigator.push(

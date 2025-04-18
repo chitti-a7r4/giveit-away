@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'setup_profile_screen.dart'; 
+import 'package:cloud_firestore/cloud_firestore.dart';
+// Import RegisterScreen
+
 
 class RegisterScreen extends StatefulWidget {
   final VoidCallback onRegisterSuccess;
@@ -16,14 +20,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
 Future<void> _registerWithEmailPassword() async {
   try {
-    await FirebaseAuth.instance.createUserWithEmailAndPassword(
+    final UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
       email: _emailController.text.trim(),
       password: _passwordController.text.trim(),
     );
-    widget.onRegisterSuccess();
+
+    final user = userCredential.user;
+
+    if (user != null) {
+      // After registration, create a document in Firestore for the user
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'uid': user.uid,
+        'name': '',  // You can leave this empty for now, and update it later
+        'email': _emailController.text.trim(),
+        'profilePicUrl': '',  // Empty for now, can be updated later
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // Navigate to SetupProfileScreen for profile setup
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const SetupProfileScreen()),
+      );
+    }
   } on FirebaseAuthException catch (e) {
     String message = "Registration failed. Please try again.";
 
@@ -35,7 +56,6 @@ Future<void> _registerWithEmailPassword() async {
       message = "The password is too weak. Use at least 6 characters.";
     } else if (e.code == 'operation-not-allowed') {
       message = "Email/password registration is currently disabled.";
-
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -47,6 +67,7 @@ Future<void> _registerWithEmailPassword() async {
     );
   }
 }
+
 
   @override
   Widget build(BuildContext context) {

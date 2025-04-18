@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:image/image.dart' as img;  // Image package for compression
+import 'package:image/image.dart' as img;
 
 final Logger _logger = Logger();
 
@@ -31,23 +31,18 @@ class _PostScreenState extends State<PostScreen> {
   String? _category;
   final List<String> _categories = ['Electronics', 'Furniture', 'Clothing', 'Books', 'Others'];
 
-  // Function to pick images from gallery
+  double _uploadProgress = 0.0;
+  bool _isUploading = false;
+
   Future<void> _pickImages() async {
     final pickedFiles = await picker.pickMultiImage();
     setState(() {
-      if (pickedFiles.length > 0) {
-        _selectedImage1 = File(pickedFiles[0].path);
-      }
-      if (pickedFiles.length > 1) {
-        _selectedImage2 = File(pickedFiles[1].path);
-      }
-      if (pickedFiles.length > 2) {
-        _selectedImage3 = File(pickedFiles[2].path);
-      }
+      if (pickedFiles.isNotEmpty) _selectedImage1 = File(pickedFiles[0].path);
+      if (pickedFiles.length > 1) _selectedImage2 = File(pickedFiles[1].path);
+      if (pickedFiles.length > 2) _selectedImage3 = File(pickedFiles[2].path);
     });
-    }
+  }
 
-  // Function to compress the image
   Future<File?> _compressImage(File image) async {
     try {
       img.Image? imageFile = img.decodeImage(image.readAsBytesSync());
@@ -55,10 +50,8 @@ class _PostScreenState extends State<PostScreen> {
         _logger.e("Error decoding image");
         return null;
       }
-
       img.Image compressedImage = img.copyResize(imageFile, width: 800);
       List<int> compressedImageBytes = img.encodeJpg(compressedImage, quality: 80);
-
       File compressedFile = File(image.path)..writeAsBytesSync(compressedImageBytes);
       return compressedFile;
     } catch (e) {
@@ -67,30 +60,42 @@ class _PostScreenState extends State<PostScreen> {
     }
   }
 
-  // Function to upload the image to Firebase Storage
   Future<String?> _uploadImage(File image) async {
     try {
       File? compressedImage = await _compressImage(image);
-      if (compressedImage == null) {
-        _logger.e("Failed to compress image.");
-        return null;
-      }
+      if (compressedImage == null) return null;
 
       String fileName = DateTime.now().millisecondsSinceEpoch.toString();
       Reference storageReference = _storage.ref().child('images/$fileName');
 
       UploadTask uploadTask = storageReference.putFile(compressedImage);
-      TaskSnapshot snapshot = await uploadTask;
 
-      String downloadUrl = await snapshot.ref.getDownloadURL();
-      return downloadUrl;
+      setState(() {
+        _isUploading = true;
+        _uploadProgress = 0.0;
+      });
+
+      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+        setState(() {
+          _uploadProgress = snapshot.bytesTransferred / snapshot.totalBytes;
+        });
+      });
+
+      TaskSnapshot snapshot = await uploadTask;
+      setState(() {
+        _isUploading = false;
+      });
+
+      return await snapshot.ref.getDownloadURL();
     } catch (e) {
       _logger.e("Error uploading image: $e");
+      setState(() {
+        _isUploading = false;
+      });
       return null;
     }
   }
 
-  // Function to get location
   Future<void> _getLocation() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
@@ -122,7 +127,6 @@ class _PostScreenState extends State<PostScreen> {
     }
   }
 
-  // Function to submit the post
   void _submitPost() async {
     if (_formKey.currentState!.validate()) {
       if (_category == null) {
@@ -153,22 +157,15 @@ class _PostScreenState extends State<PostScreen> {
         if (imageUrl3 != null) imageUrls.add(imageUrl3);
       }
 
-      // Save post details in Firestore
       try {
-try {
-  await FirebaseFirestore.instance.collection('posts').add({
-    'title': _titleController.text,
-    'description': _descriptionController.text,
-    'category': _category,
-    'location': _locationController.text,
-    'images': imageUrls,
-    'timestamp': FieldValue.serverTimestamp(),
-  });
-
-  _logger.i("Post saved successfully!");
-} catch (e) {
-  _logger.e("Error saving post to Firestore: $e");
-}
+        await FirebaseFirestore.instance.collection('posts').add({
+          'title': _titleController.text,
+          'description': _descriptionController.text,
+          'category': _category,
+          'location': _locationController.text,
+          'images': imageUrls,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Item posted successfully!")),
@@ -205,7 +202,6 @@ try {
           key: _formKey,
           child: Column(
             children: [
-              // Title Field
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -217,8 +213,6 @@ try {
                     value == null || value.isEmpty ? 'Please enter a title' : null,
               ),
               const SizedBox(height: 20),
-
-              // Description Field
               TextFormField(
                 controller: _descriptionController,
                 maxLines: 3,
@@ -231,8 +225,6 @@ try {
                     value == null || value.isEmpty ? 'Please enter a description' : null,
               ),
               const SizedBox(height: 20),
-
-              // Category Dropdown
               DropdownButtonFormField<String>(
                 value: _category,
                 decoration: const InputDecoration(
@@ -255,8 +247,6 @@ try {
                     value == null ? 'Please select a category' : null,
               ),
               const SizedBox(height: 20),
-
-              // Location Field
               TextFormField(
                 controller: _locationController,
                 decoration: const InputDecoration(
@@ -266,8 +256,6 @@ try {
                 ),
               ),
               const SizedBox(height: 10),
-
-              // Get Location Button
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
@@ -277,8 +265,6 @@ try {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Image Picker
               GestureDetector(
                 onTap: _pickImages,
                 child: Container(
@@ -289,7 +275,9 @@ try {
                     borderRadius: BorderRadius.circular(12),
                     color: Colors.grey[200],
                   ),
-                  child: _selectedImage1 == null && _selectedImage2 == null && _selectedImage3 == null
+                  child: _selectedImage1 == null &&
+                          _selectedImage2 == null &&
+                          _selectedImage3 == null
                       ? const Center(child: Text("Tap to select images"))
                       : GridView(
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -299,32 +287,32 @@ try {
                           ),
                           children: [
                             if (_selectedImage1 != null)
-                              Image.file(
-                                _selectedImage1!,
-                                fit: BoxFit.cover,
-                              ),
+                              Image.file(_selectedImage1!, fit: BoxFit.cover),
                             if (_selectedImage2 != null)
-                              Image.file(
-                                _selectedImage2!,
-                                fit: BoxFit.cover,
-                              ),
+                              Image.file(_selectedImage2!, fit: BoxFit.cover),
                             if (_selectedImage3 != null)
-                              Image.file(
-                                _selectedImage3!,
-                                fit: BoxFit.cover,
-                              ),
+                              Image.file(_selectedImage3!, fit: BoxFit.cover),
                           ],
                         ),
                 ),
               ),
               const SizedBox(height: 30),
-
-              // Submit Button
+              if (_isUploading)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: Column(
+                    children: [
+                      const Text("Uploading image..."),
+                      const SizedBox(height: 8),
+                      LinearProgressIndicator(value: _uploadProgress),
+                    ],
+                  ),
+                ),
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _submitPost,
+                  onPressed: _isUploading ? null : _submitPost,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
