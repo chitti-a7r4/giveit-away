@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-
+import 'full_screen_image_view.dart';
 class ItemViewScreen extends StatelessWidget {
   final String itemName;
   final String description;
@@ -45,7 +45,7 @@ class ItemViewScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image carousel
+            // Image carousel with tap gesture
             CarouselSlider(
               options: CarouselOptions(
                 height: 260,
@@ -56,25 +56,39 @@ class ItemViewScreen extends StatelessWidget {
               items: imageUrls.map((url) {
                 return Builder(
                   builder: (BuildContext context) {
-                   return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 5),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5)],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Image.network(
-                          url,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return const Center(child: CircularProgressIndicator());
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.asset('assets/images/placeholder.png');
-                          },
+                    return GestureDetector(
+onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => FullScreenImageViewer(
+        imageUrls: imageUrls,
+        initialIndex: imageUrls.indexOf(url),
+      ),
+    ),
+  );
+},
+
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 5),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5)],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.network(
+                            url,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const Center(child: CircularProgressIndicator());
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset('assets/images/placeholder.png');
+                            },
+                          ),
                         ),
                       ),
                     );
@@ -98,8 +112,6 @@ class ItemViewScreen extends StatelessWidget {
                       Text(itemName,
                           style: theme.textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 12),
-
-                      // Category and Location chips
                       Wrap(
                         spacing: 10,
                         runSpacing: 8,
@@ -116,15 +128,11 @@ class ItemViewScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 20),
                       const Text('Description',
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
-                      Text(
-                        description,
-                        style: theme.textTheme.bodyLarge,
-                      ),
+                      Text(description, style: theme.textTheme.bodyLarge),
                     ],
                   ),
                 ),
@@ -147,10 +155,8 @@ class ItemViewScreen extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Donated by',
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
+                      const Text('Donated by',
+                          style: TextStyle(fontSize: 14, color: Colors.grey)),
                       Text(
                         donorName,
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -162,12 +168,12 @@ class ItemViewScreen extends StatelessWidget {
             ),
             const SizedBox(height: 25),
 
-            // Contact button
+            // Contact Button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ElevatedButton.icon(
                 onPressed: () {
-                  // TODO: Implement contact action (e.g., open WhatsApp, email, etc.)
+                  // TODO: Implement contact action
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 240, 186, 37),
