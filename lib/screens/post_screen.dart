@@ -24,6 +24,7 @@ class _PostScreenState extends State<PostScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final FirebaseStorage _storage = FirebaseStorage.instance;
+
   File? _selectedImage1;
   File? _selectedImage2;
   File? _selectedImage3;
@@ -128,7 +129,7 @@ class _PostScreenState extends State<PostScreen> {
     }
   }
 
-  void _submitPost() async {
+  Future<void> _submitPost() async {
     if (_formKey.currentState!.validate()) {
       if (_category == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -136,13 +137,14 @@ class _PostScreenState extends State<PostScreen> {
         );
         return;
       }
+
       final user = FirebaseAuth.instance.currentUser;
-if (user == null) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text("You need to be logged in to post.")),
-  );
-  return;
-}
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("You need to be logged in to post.")),
+        );
+        return;
+      }
 
       if (_selectedImage1 == null && _selectedImage2 == null && _selectedImage3 == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -150,7 +152,12 @@ if (user == null) {
         );
         return;
       }
-      
+
+      // Fetch user details
+      DocumentSnapshot userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      String userName = userDoc['name'] ?? 'Anonymous';
+      String profileImageUrl = userDoc['imageUrl'] ?? '';
 
       List<String> imageUrls = [];
       if (_selectedImage1 != null) {
@@ -165,7 +172,7 @@ if (user == null) {
         String? imageUrl3 = await _uploadImage(_selectedImage3!);
         if (imageUrl3 != null) imageUrls.add(imageUrl3);
       }
-      
+
       try {
         await FirebaseFirestore.instance.collection('posts').add({
           'title': _titleController.text,
@@ -175,6 +182,8 @@ if (user == null) {
           'images': imageUrls,
           'timestamp': FieldValue.serverTimestamp(),
           'uid': user.uid,
+          'userName': userName,
+          'userProfileImageUrl': profileImageUrl,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(

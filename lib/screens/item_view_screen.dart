@@ -8,6 +8,8 @@ class ItemViewScreen extends StatelessWidget {
   final String contactInfo;
   final String location;
   final List<String> imageUrls;
+  final String donorName;
+  final String donorImageUrl;
 
   const ItemViewScreen({
     super.key,
@@ -17,6 +19,8 @@ class ItemViewScreen extends StatelessWidget {
     required this.contactInfo,
     required this.imageUrls,
     required this.location,
+    required this.donorName,
+    required this.donorImageUrl,
   });
 
   @override
@@ -52,7 +56,7 @@ class ItemViewScreen extends StatelessWidget {
               items: imageUrls.map((url) {
                 return Builder(
                   builder: (BuildContext context) {
-                    return Container(
+                   return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 5),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
@@ -124,6 +128,36 @@ class ItemViewScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+              ),
+            ),
+            const SizedBox(height: 25),
+
+            // Donor Info
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundImage: donorImageUrl.isNotEmpty
+                        ? NetworkImage(donorImageUrl)
+                        : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Donated by',
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                      Text(
+                        donorName,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 25),

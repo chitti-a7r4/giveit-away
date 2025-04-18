@@ -115,20 +115,21 @@ class HomeScreen extends StatelessWidget {
                         location: data['location'] ?? 'Unknown',
                         imagePath: imagePath,
                         onTap: () {
-Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (_) => ItemViewScreen(
-      itemName: data['title'] ?? '',
-      description: data['description'] ?? '',
-      category: data['category'] ?? '',
-      contactInfo: data['contactInfo'] ?? '',
-      location: data['location'] ?? '',
-      imageUrls: List<String>.from(data['images'] ?? []),  // Pass images as a list
-    ),
-  ),
-);
-
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ItemViewScreen(
+                                itemName: data['title'] ?? '',
+                                description: data['description'] ?? '',
+                                category: data['category'] ?? '',
+                                contactInfo: data['contactInfo'] ?? '',
+                                location: data['location'] ?? '',
+                                imageUrls: List<String>.from(data['images'] ?? []),
+                                donorName: data['userName'] ?? 'Unknown Donor',
+                                donorImageUrl: data['userProfileImageUrl'] ?? '',
+                              ),
+                            ),
+                          );
                         },
                       );
                     }).toList(),
@@ -141,5 +142,4 @@ Navigator.push(
       ),
     );
   }
-  
 }
