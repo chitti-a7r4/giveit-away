@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';  // Add Google Sign-In import
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'register_screen.dart';
-import 'setup_profile_screen.dart';  // Import RegisterScreen
+import 'setup_profile_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -21,46 +21,52 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-Future<void> _signInWithGoogle() async {
-  try {
-    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-    if (googleUser == null) return;
+  Future<void> _signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return;
 
-    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
 
-    final UserCredential userCredential =
-        await FirebaseAuth.instance.signInWithCredential(credential);
-    final user = userCredential.user;
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+      final user = userCredential.user;
 
-    if (user != null) {
-      // Check if user data exists in Firestore
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
+      if (user != null) {
+        final userDocRef =
+            FirebaseFirestore.instance.collection('users').doc(user.uid);
+        final userDoc = await userDocRef.get();
 
-      if (!userDoc.exists) {
-        // First-time login, go to setup screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const SetupProfileScreen()),
-        );
-      } else {
-        // Existing user, continue as normal
-        widget.onLoginSuccess();
+        if (!userDoc.exists) {
+          // Create user document for first-time Google Sign-In users
+          await userDocRef.set({
+            'email': user.email,
+            'name': user.displayName ?? '',
+            'imageUrl': user.photoURL ?? '',
+            'bio': '',
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const SetupProfileScreen()),
+          );
+        } else {
+          widget.onLoginSuccess();
+        }
       }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Google Sign-In failed: $e")),
+      );
     }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Google Sign-In failed: $e")),
-    );
   }
-}
 
   void _navigateToRegister() {
     Navigator.push(
@@ -90,7 +96,6 @@ Future<void> _signInWithGoogle() async {
                 key: _formKey,
                 child: Column(
                   children: [
-                    // Email Field
                     TextFormField(
                       controller: _emailController,
                       decoration: InputDecoration(
@@ -103,8 +108,6 @@ Future<void> _signInWithGoogle() async {
                           value != null && value.contains('@') ? null : 'Enter a valid email',
                     ),
                     const SizedBox(height: 20),
-
-                    // Password Field
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscureText,
@@ -124,63 +127,57 @@ Future<void> _signInWithGoogle() async {
                     ),
                     const SizedBox(height: 30),
 
-                    // Login Button
-// Login Button
-SizedBox(
-  width: double.infinity,
-  height: 48,
-  child: ElevatedButton(
-    onPressed: () async {
-      if (_formKey.currentState!.validate()) {
-try {
-  await FirebaseAuth.instance.signInWithEmailAndPassword(
-    email: _emailController.text.trim(),
-    password: _passwordController.text.trim(),
-  );
-  widget.onLoginSuccess();
-} on FirebaseAuthException catch (e) {
-  String message = "Login failed. Please try again.";
-
-  if (e.code == 'user-not-found') {
-    message = "No account found for this email.";
-  } else if (e.code == 'wrong-password') {
-    message = "Incorrect password.";
-  } else if (e.code == 'invalid-email') {
-    message = "Invalid email format.";
-  } else if (e.code == 'user-disabled') {
-    message = "This account has been disabled.";
-  }
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message)),
-  );
-} catch (e) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text("Something went wrong. Try again.")),
-  );
-}
-
-      }
-    },
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.black,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-    ),
-    child: const Text(
-      "Login",
-      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-    ),
-  ),
-),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (_formKey.currentState!.validate()) {
+                            try {
+                              await FirebaseAuth.instance.signInWithEmailAndPassword(
+                                email: _emailController.text.trim(),
+                                password: _passwordController.text.trim(),
+                              );
+                              widget.onLoginSuccess();
+                            } on FirebaseAuthException catch (e) {
+                              String message = "Login failed. Please try again.";
+                              if (e.code == 'user-not-found') {
+                                message = "No account found for this email.";
+                              } else if (e.code == 'wrong-password') {
+                                message = "Incorrect password.";
+                              } else if (e.code == 'invalid-email') {
+                                message = "Invalid email format.";
+                              } else if (e.code == 'user-disabled') {
+                                message = "This account has been disabled.";
+                              }
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(message)),
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Something went wrong. Try again.")),
+                              );
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          "Login",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 15),
 
                     const Divider(height: 32),
                     const Text("or"),
                     const SizedBox(height: 15),
 
-                    // Google Sign-In Button
                     OutlinedButton.icon(
                       onPressed: _signInWithGoogle,
                       icon: const Icon(Icons.login),
@@ -194,13 +191,12 @@ try {
                     ),
                     const SizedBox(height: 20),
 
-                    // Sign-up link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Text("Don’t have an account? "),
                         TextButton(
-                          onPressed: _navigateToRegister,  // Navigate to RegisterScreen
+                          onPressed: _navigateToRegister,
                           child: const Text("Sign up"),
                         ),
                       ],

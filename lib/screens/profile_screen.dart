@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
+
+  Future<Map<String, dynamic>?> _fetchUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+
+    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    return doc.data();
+  }
 
   void _showSettingsMenu(BuildContext context) {
     showModalBottomSheet(
@@ -28,9 +37,9 @@ class ProfileScreen extends StatelessWidget {
                 title: const Text('Edit Profile'),
                 onTap: () {
                   Navigator.pop(context);
-                  // Navigate to Edit Profile screen
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Edit Profile tapped")),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const EditProfileScreen()),
                   );
                 },
               ),
@@ -38,7 +47,7 @@ class ProfileScreen extends StatelessWidget {
                 leading: const Icon(Icons.help_outline),
                 title: const Text('Help & Support'),
                 onTap: () {
-                  context.go('/post');
+                  // TODO: Add Help & Support logic
                 },
               ),
               ListTile(
@@ -47,7 +56,7 @@ class ProfileScreen extends StatelessWidget {
                 onTap: () async {
                   Navigator.pop(context);
                   await FirebaseAuth.instance.signOut();
-                  Navigator.pushReplacementNamed(context, '/login'); // Adjust this route to match your login route
+                  Navigator.pushReplacementNamed(context, '/login');
                 },
               ),
             ],
@@ -61,63 +70,105 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 30),
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top bar with settings icon
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Your Profile',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.settings),
-                  onPressed: () => _showSettingsMenu(context),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            const Center(
-              child: CircleAvatar(
-                radius: 50,
-                backgroundImage: AssetImage('assets/profile_pic.png'),
-              ),
-            ),
-            const SizedBox(height: 15),
-            const Center(
-              child: Text(
-                'Shiva',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Center(
-              child: Text(
-                'Bio: Giving back to the community through small acts of kindness.',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 30),
-            const Text(
-              'Your Donations',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: ListView(
-                children: const [
-                  DonationCard(
-                    title: 'Vaccum Cleaner',
-                    category: 'Appliances',
-                    location: 'Nagpur',
-                    imagePath: 'assets/vaccum.png',
+            // Top bar (Always visible)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Your Profile',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.settings),
+                    onPressed: () => _showSettingsMenu(context),
                   ),
                 ],
+              ),
+            ),
+
+            // User Info and Content
+            Expanded(
+              child: FutureBuilder<Map<String, dynamic>?>(
+                future: _fetchUserData(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final userData = snapshot.data;
+
+                  if (userData == null) {
+                    return const Center(
+                      child: Text("User data not found. Please update your profile."),
+                    );
+                  }
+
+                  final name = userData['name'] ?? 'Anonymous';
+                  final bio = userData['bio'] ?? 'No bio added';
+                  final profilePic = userData['imageUrl'] ?? '';
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Profile picture
+                        Center(
+                          child: CircleAvatar(
+                            radius: 50,
+                            backgroundImage: profilePic.isNotEmpty
+                                ? NetworkImage(profilePic)
+                                : const AssetImage('assets/profile_pic.png') as ImageProvider,
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+
+                        // Name
+                        Center(
+                          child: Text(
+                            name,
+                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Bio
+                        Center(
+                          child: Text(
+                            'Bio: $bio',
+                            style: const TextStyle(fontSize: 16, color: Colors.grey),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+
+                        const Text(
+                          'Your Donations',
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+
+                        Expanded(
+                          child: ListView(
+                            children: const [
+                              DonationCard(
+                                title: 'Vaccum Cleaner',
+                                category: 'Appliances',
+                                location: 'Nagpur',
+                                imagePath: 'assets/vaccum.png',
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
           ],

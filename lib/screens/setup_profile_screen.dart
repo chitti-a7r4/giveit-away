@@ -4,7 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:newapp/screens/home_screen.dart';
+import 'package:newapp/main.dart';
+import 'package:image/image.dart' as img;
+
+
 
 
 class SetupProfileScreen extends StatefulWidget {
@@ -19,15 +22,31 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
   File? _pickedImage;
   bool _isSaving = false;
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _pickedImage = File(pickedFile.path);
-      });
-    }
-  }
+Future<void> _pickImage() async {
+  final picker = ImagePicker();
+  final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+  if (pickedFile == null) return;
+
+  final originalFile = File(pickedFile.path);
+  final imageBytes = await originalFile.readAsBytes();
+  final image = img.decodeImage(imageBytes);
+
+  if (image == null) return;
+
+  // Resize if needed (optional)
+  final resized = img.copyResize(image, width: 512); // limit to 512px width
+
+  // Encode the resized image to JPEG with lower quality
+  final compressedBytes = img.encodeJpg(resized, quality: 60);
+
+  final compressedFile = File('${pickedFile.path}_compressed.jpg')
+    ..writeAsBytesSync(compressedBytes);
+
+  setState(() {
+    _pickedImage = compressedFile;
+  });
+}
+
 
   Future<void> _saveProfile() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -64,7 +83,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
 
   Navigator.pushAndRemoveUntil(
   context,
-  MaterialPageRoute(builder: (_) => const HomeScreen()),
+  MaterialPageRoute(builder: (_) => const MainScreen()),
   (route) => false,
 );
  // go to main screen

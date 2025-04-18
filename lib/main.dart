@@ -10,7 +10,6 @@ import 'screens/post_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/chat_list_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/setup_profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
