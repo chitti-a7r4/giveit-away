@@ -7,6 +7,7 @@ import 'package:logger/logger.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:image/image.dart' as img;
+import 'package:firebase_auth/firebase_auth.dart';
 
 final Logger _logger = Logger();
 
@@ -135,6 +136,13 @@ class _PostScreenState extends State<PostScreen> {
         );
         return;
       }
+      final user = FirebaseAuth.instance.currentUser;
+if (user == null) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text("You need to be logged in to post.")),
+  );
+  return;
+}
 
       if (_selectedImage1 == null && _selectedImage2 == null && _selectedImage3 == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -142,6 +150,7 @@ class _PostScreenState extends State<PostScreen> {
         );
         return;
       }
+      
 
       List<String> imageUrls = [];
       if (_selectedImage1 != null) {
@@ -156,7 +165,7 @@ class _PostScreenState extends State<PostScreen> {
         String? imageUrl3 = await _uploadImage(_selectedImage3!);
         if (imageUrl3 != null) imageUrls.add(imageUrl3);
       }
-
+      
       try {
         await FirebaseFirestore.instance.collection('posts').add({
           'title': _titleController.text,
@@ -165,6 +174,7 @@ class _PostScreenState extends State<PostScreen> {
           'location': _locationController.text,
           'images': imageUrls,
           'timestamp': FieldValue.serverTimestamp(),
+          'uid': user.uid,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(

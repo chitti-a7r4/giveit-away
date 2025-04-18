@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'edit_profile_screen.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -73,7 +74,7 @@ class ProfileScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Top bar (Always visible)
+            // Top bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               child: Row(
@@ -111,6 +112,7 @@ class ProfileScreen extends StatelessWidget {
                   final name = userData['name'] ?? 'Anonymous';
                   final bio = userData['bio'] ?? 'No bio added';
                   final profilePic = userData['imageUrl'] ?? '';
+                  final user = FirebaseAuth.instance.currentUser;
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -153,16 +155,35 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 10),
 
+                        // StreamBuilder to show user's donations
                         Expanded(
-                          child: ListView(
-                            children: const [
-                              DonationCard(
-                                title: 'Vaccum Cleaner',
-                                category: 'Appliances',
-                                location: 'Nagpur',
-                                imagePath: 'assets/vaccum.png',
-                              ),
-                            ],
+                          child: StreamBuilder<QuerySnapshot>(
+                            stream: FirebaseFirestore.instance
+                                .collection('posts')
+                                .where('uid', isEqualTo: user!.uid)
+                                .orderBy('timestamp', descending: true)
+                                .snapshots(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return const Center(child: CircularProgressIndicator());
+                              }
+
+                              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                                return const Center(
+                                  child: Text("You haven't posted any items yet."),
+                                );
+                              }
+
+                              final posts = snapshot.data!.docs;
+
+                              return ListView.builder(
+                                itemCount: posts.length,
+                                itemBuilder: (context, index) {
+                                  final post = posts[index];
+                                  return DonationCard(post: post);
+                                },
+                              );
+                            },
                           ),
                         ),
                       ],
@@ -178,40 +199,108 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-class DonationCard extends StatelessWidget {
-  final String title;
-  final String category;
-  final String location;
-  final String imagePath;
+class DonationCard extends StatefulWidget {
+  final DocumentSnapshot post;
+  const DonationCard({super.key, required this.post});
 
-  const DonationCard({
-    super.key,
-    required this.title,
-    required this.category,
-    required this.location,
-    required this.imagePath,
-  });
+  @override
+  State<DonationCard> createState() => _DonationCardState();
+}
+
+class _DonationCardState extends State<DonationCard> {
+  bool _isDeleting = false;
+
+  Future<void> _deletePost() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Post?'),
+        content: const Text('Are you sure you want to delete this donation? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+          ),
+          TextButton(
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() {
+      _isDeleting = true;
+    });
+
+    try {
+      final images = widget.post['images'] as List<dynamic>;
+
+      for (final url in images) {
+        if (url.toString().startsWith('https://')) {
+          final ref = FirebaseStorage.instance.refFromURL(url.toString());
+          await ref.delete();
+        }
+      }
+
+      await FirebaseFirestore.instance.collection('posts').doc(widget.post.id).delete();
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Post deleted successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete post: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDeleting = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isDeleting) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final imageUrl = widget.post['images'].isNotEmpty
+        ? widget.post['images'][0]
+        : 'assets/profile_pic.png';
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         contentPadding: const EdgeInsets.all(12),
-        leading: Image.asset(imagePath, width: 50, height: 50),
-        title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        subtitle: Text('$category\n$location', style: TextStyle(fontSize: 14, color: Colors.grey[700])),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.green[100],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            'Available',
-            style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold),
-          ),
+        leading: Image(
+          image: imageUrl.startsWith('http')
+              ? NetworkImage(imageUrl)
+              : AssetImage(imageUrl) as ImageProvider,
+          width: 50,
+          height: 50,
+          fit: BoxFit.cover,
+        ),
+        title: Text(widget.post['title'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        subtitle: Text(
+          '${widget.post['category']}\n${widget.post['location']}',
+          style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete, color: Colors.red),
+          onPressed: _deletePost,
         ),
       ),
     );

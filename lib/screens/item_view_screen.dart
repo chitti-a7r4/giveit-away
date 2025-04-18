@@ -6,8 +6,8 @@ class ItemViewScreen extends StatelessWidget {
   final String description;
   final String category;
   final String contactInfo;
-  final String location;  // Location of the item
-  final List<String> imageUrls;  // List of image URLs
+  final String location;
+  final List<String> imageUrls;
 
   const ItemViewScreen({
     super.key,
@@ -16,50 +16,62 @@ class ItemViewScreen extends StatelessWidget {
     required this.category,
     required this.contactInfo,
     required this.imageUrls,
-    required this.location
+    required this.location,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: Text(itemName),
-        backgroundColor: const Color.fromARGB(255, 166, 215, 67),
+        title: Text(itemName, style: const TextStyle(fontWeight: FontWeight.w600)),
+        backgroundColor: const Color.fromARGB(255, 29, 150, 122),
         actions: [
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: () {
-              // TODO: Add share functionality
+              // TODO: Share functionality
             },
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Carousel of images
+            // Image carousel
             CarouselSlider(
               options: CarouselOptions(
-                height: 250,
+                height: 260,
                 enlargeCenterPage: true,
                 autoPlay: true,
-                aspectRatio: 16/9,
-                viewportFraction: 0.8,
+                viewportFraction: 0.9,
               ),
               items: imageUrls.map((url) {
                 return Builder(
                   builder: (BuildContext context) {
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        url,
-                        width: MediaQuery.of(context).size.width,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Image.asset('assets/images/placeholder.png', width: 200, height: 200);
-                        },
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 5),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5)],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.network(
+                          url,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const Center(child: CircularProgressIndicator());
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Image.asset('assets/images/placeholder.png');
+                          },
+                        ),
                       ),
                     );
                   },
@@ -67,43 +79,74 @@ class ItemViewScreen extends StatelessWidget {
               }).toList(),
             ),
             const SizedBox(height: 20),
-            Text(
-              itemName,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+
+            // Item Details
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(itemName,
+                          style: theme.textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+
+                      // Category and Location chips
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 8,
+                        children: [
+                          Chip(
+                            avatar: const Icon(Icons.category, size: 18),
+                            label: Text(category),
+                            backgroundColor: Colors.blue.shade50,
+                          ),
+                          Chip(
+                            avatar: const Icon(Icons.location_on, size: 18),
+                            label: Text(location),
+                            backgroundColor: Colors.green.shade50,
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+                      const Text('Description',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      Text(
+                        description,
+                        style: theme.textTheme.bodyLarge,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              'Category: $category',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Location: $location',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Description',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              description,
-              style: const TextStyle(fontSize: 16, color: Colors.black),
+            const SizedBox(height: 25),
+
+            // Contact button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  // TODO: Implement contact action (e.g., open WhatsApp, email, etc.)
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 240, 186, 37),
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 2,
+                  shadowColor: const Color.fromARGB(255, 240, 105, 159),
+                ),
+                icon: const Icon(Icons.message),
+                label: const Text('Contact Donator', style: TextStyle(fontSize: 16)),
+              ),
             ),
             const SizedBox(height: 30),
-            ElevatedButton.icon(
-              onPressed: () {
-                // TODO: Add contact action
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                textStyle: const TextStyle(fontSize: 16),
-              ),
-              icon: const Icon(Icons.message),
-              label: const Text('Contact Donator'),
-            ),
           ],
         ),
       ),
