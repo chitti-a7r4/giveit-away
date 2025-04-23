@@ -3,7 +3,7 @@ import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_app_check/firebase_app_check.dart'; // Import the App Check package
-
+import 'package:flutter/services.dart';
 import 'firebase_options.dart';
 import 'screens/home_screen.dart';
 import 'screens/post_screen.dart';
@@ -15,6 +15,14 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
+  );
+    WidgetsFlutterBinding.ensureInitialized();
+
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.black, // 🔲 Sets the background of status bar
+      statusBarIconBrightness: Brightness.light, // ☀️ For white icons on dark bar
+    ),
   );
 
   // Activate Firebase App Check using Play Integrity for Android

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import 'item_view_screen.dart';
 
 // 🔼 Custom widget for each donation item card
@@ -21,6 +23,7 @@ class DonationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -56,6 +59,7 @@ class DonationCard extends StatelessWidget {
     );
   }
 }
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -65,41 +69,82 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String selectedLocation = 'All';
+  String selectedCategory = 'All';
 
   final List<String> locations = [
     'All', 'Shillong', 'Guwahati', 'Delhi', 'Hyderabad' // ➕ add more
   ];
 
+  final List<String> categories = [
+    'All', 'Electronics', 'Furniture', 'Clothing', 'Books', 'Others'
+  ];
+
+  // Function to get current location
+  Future<void> _getCurrentLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      await Geolocator.openLocationSettings();
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.deniedForever) {
+        return;
+      }
+    }
+
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+
+    List<Placemark> placemarks =
+        await placemarkFromCoordinates(position.latitude, position.longitude);
+
+    if (placemarks.isNotEmpty) {
+      final city = placemarks.first.locality;
+      setState(() {
+        selectedLocation = city ?? 'Unknown';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF2196F3), // Blue
+                Color(0xFFBBDEFB), // Light Blue
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
+        title: const Text(
+          'giveIT-away',
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
       backgroundColor: Colors.grey[100],
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔝 Top Bar
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text(
-                  'giveIT-away',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                Icon(Icons.lock_outline, size: 24),
-              ],
-            ),
-
-            const SizedBox(height: 15),
+          //  const SizedBox(height: 15),
             const Text(
               'Give things away easily',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 20),
 
-            // 🌍 Location Dropdown
+            // 🌍 Location Dropdown and Current Location Button
             Row(
               children: [
                 const Text("Location: ", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -120,10 +165,38 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   }).toList(),
                 ),
+                IconButton(
+                  icon: const Icon(Icons.my_location),
+                  onPressed: _getCurrentLocation,
+                ),
               ],
             ),
 
-            const SizedBox(height: 15),
+            const SizedBox(height: 5),
+
+            // 📦 Category Dropdown
+            Row(
+              children: [
+                const Text("Category: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(width: 10),
+                DropdownButton<String>(
+                  value: selectedCategory,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedCategory = value;
+                      });
+                    }
+                  },
+                  items: categories.map((cat) {
+                    return DropdownMenuItem(
+                      value: cat,
+                      child: Text(cat),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
 
             // 🔄 Posts List
             Expanded(
@@ -141,18 +214,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     return const Center(child: Text('No items available yet.'));
                   }
 
-                  // ⛏️ Filter data by selected location (client-side filter)
-final filteredDocs = selectedLocation == 'All'
-    ? snapshot.data!.docs
-    : snapshot.data!.docs.where((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        final location = data['location'] ?? '';
-        return location.toString().toLowerCase().startsWith(selectedLocation.toLowerCase());
-      }).toList();
+                  // ⛏️ Filter data by selected location and category
+                  final filteredDocs = snapshot.data!.docs.where((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final location = data['location'] ?? '';
+                    final category = data['category'] ?? '';
 
+                    bool locationMatch = selectedLocation == 'All' || location.toString().toLowerCase().startsWith(selectedLocation.toLowerCase());
+                    bool categoryMatch = selectedCategory == 'All' || category.toString().toLowerCase().startsWith(selectedCategory.toLowerCase());
+
+                    return locationMatch && categoryMatch;
+                  }).toList();
 
                   if (filteredDocs.isEmpty) {
-                    return const Center(child: Text('No items found for this location.'));
+                    return const Center(child: Text('No items found for this location and category.'));
                   }
 
                   return ListView(
