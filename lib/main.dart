@@ -21,6 +21,8 @@ void main() async {
   await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.playIntegrity, // Use Play Integrity as the Android provider
   );
+    WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
 
   runApp(const GiveItAwayApp());
 }

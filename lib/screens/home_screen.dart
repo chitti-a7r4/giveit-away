@@ -56,10 +56,19 @@ class DonationCard extends StatelessWidget {
     );
   }
 }
-
-// 🔽 HomeScreen widget
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String selectedLocation = 'All';
+
+  final List<String> locations = [
+    'All', 'Shillong', 'Guwahati', 'Delhi', 'Hyderabad' // ➕ add more
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +79,7 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Bar
+            // 🔝 Top Bar
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: const [
@@ -81,17 +90,48 @@ class HomeScreen extends StatelessWidget {
                 Icon(Icons.lock_outline, size: 24),
               ],
             ),
+
             const SizedBox(height: 15),
             const Text(
               'Give things away easily',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
+
             const SizedBox(height: 20),
 
-            // 🔄 Fetch and display posts from Firestore
+            // 🌍 Location Dropdown
+            Row(
+              children: [
+                const Text("Location: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(width: 10),
+                DropdownButton<String>(
+                  value: selectedLocation,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedLocation = value;
+                      });
+                    }
+                  },
+                  items: locations.map((loc) {
+                    return DropdownMenuItem(
+                      value: loc,
+                      child: Text(loc),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 15),
+
+            // 🔄 Posts List
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance.collection('posts').orderBy('timestamp', descending: true).snapshots(),
+                stream: FirebaseFirestore.instance
+                    .collection('posts')
+                    .orderBy('timestamp', descending: true)
+                    .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -101,8 +141,22 @@ class HomeScreen extends StatelessWidget {
                     return const Center(child: Text('No items available yet.'));
                   }
 
+                  // ⛏️ Filter data by selected location (client-side filter)
+final filteredDocs = selectedLocation == 'All'
+    ? snapshot.data!.docs
+    : snapshot.data!.docs.where((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        final location = data['location'] ?? '';
+        return location.toString().toLowerCase().startsWith(selectedLocation.toLowerCase());
+      }).toList();
+
+
+                  if (filteredDocs.isEmpty) {
+                    return const Center(child: Text('No items found for this location.'));
+                  }
+
                   return ListView(
-                    children: snapshot.data!.docs.map((doc) {
+                    children: filteredDocs.map((doc) {
                       final data = doc.data() as Map<String, dynamic>;
 
                       final imagePath = data['images'] != null && data['images'].isNotEmpty
@@ -127,6 +181,7 @@ class HomeScreen extends StatelessWidget {
                                 imageUrls: List<String>.from(data['images'] ?? []),
                                 donorName: data['userName'] ?? 'Unknown Donor',
                                 donorImageUrl: data['userProfileImageUrl'] ?? '',
+                                uid: data['uid'] ?? '',
                               ),
                             ),
                           );

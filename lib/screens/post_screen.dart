@@ -321,7 +321,7 @@ class _PostScreenState extends State<PostScreen> {
                   padding: const EdgeInsets.only(bottom: 20),
                   child: Column(
                     children: [
-                      const Text("Uploading image..."),
+                      const Text("Uploading image(s)..."),
                       const SizedBox(height: 8),
                       LinearProgressIndicator(value: _uploadProgress),
                     ],

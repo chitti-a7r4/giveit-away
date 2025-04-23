@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'full_screen_image_view.dart';
+import 'chat_coversation.dart';
+import 'chat_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 class ItemViewScreen extends StatelessWidget {
   final String itemName;
   final String description;
@@ -10,6 +14,7 @@ class ItemViewScreen extends StatelessWidget {
   final List<String> imageUrls;
   final String donorName;
   final String donorImageUrl;
+  final String uid; // Donor's UID
 
   const ItemViewScreen({
     super.key,
@@ -21,6 +26,7 @@ class ItemViewScreen extends StatelessWidget {
     required this.location,
     required this.donorName,
     required this.donorImageUrl,
+    required this.uid, // Adding UID as a parameter
   });
 
   @override
@@ -57,18 +63,17 @@ class ItemViewScreen extends StatelessWidget {
                 return Builder(
                   builder: (BuildContext context) {
                     return GestureDetector(
-onTap: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => FullScreenImageViewer(
-        imageUrls: imageUrls,
-        initialIndex: imageUrls.indexOf(url),
-      ),
-    ),
-  );
-},
-
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => FullScreenImageViewer(
+                              imageUrls: imageUrls,
+                              initialIndex: imageUrls.indexOf(url),
+                            ),
+                          ),
+                        );
+                      },
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 5),
                         decoration: BoxDecoration(
@@ -173,7 +178,27 @@ onTap: () {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ElevatedButton.icon(
                 onPressed: () {
-                  // TODO: Implement contact action
+                  final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+
+                  if (currentUserId == uid) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("You can't chat with yourself.")),
+                    );
+                    return;
+                  }
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChatScreen(
+                        conversation: ChatConversation(
+                          id: uid, // UID of the donator
+                          name: donorName,
+                          imageUrl: donorImageUrl,
+                        ),
+                      ),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 240, 186, 37),
@@ -186,6 +211,8 @@ onTap: () {
                 label: const Text('Contact Donator', style: TextStyle(fontSize: 16)),
               ),
             ),
+            const SizedBox(height: 30),
+
             const SizedBox(height: 30),
           ],
         ),
