@@ -17,8 +17,8 @@ class ChatListScreen extends StatelessWidget {
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [
-          Color(0xFFFF9400), // Orange
-          Color(0xFFFFCC80),
+                Color(0xFFFF9400), // Orange
+                Color(0xFFFFCC80),
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -38,13 +38,13 @@ class ChatListScreen extends StatelessWidget {
             .snapshots(),
         builder: (context, chatSnapshot) {
           if (!chatSnapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           final chatDocs = chatSnapshot.data!.docs;
 
           if (chatDocs.isEmpty) {
-            return Center(child: Text("No conversations yet."));
+            return const Center(child: Text("No conversations yet."));
           }
 
           return ListView.builder(
@@ -59,59 +59,84 @@ class ChatListScreen extends StatelessWidget {
                 future: FirebaseFirestore.instance.collection('users').doc(otherUserId).get(),
                 builder: (context, userSnapshot) {
                   if (!userSnapshot.hasData) {
-                    return SizedBox.shrink();
+                    return const SizedBox.shrink();
                   }
 
                   final userData = userSnapshot.data!.data() as Map<String, dynamic>;
                   final name = userData['name'] ?? 'User';
                   final imageUrl = userData['imageUrl'] ?? '';
 
-                  return StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('chats/$chatId/messages')
-                        .orderBy('timestamp', descending: true)
-                        .limit(1)
-                        .snapshots(),
-                    builder: (context, messageSnapshot) {
-                      String lastMessage = '';
-                      String time = '';
+                 return StreamBuilder<QuerySnapshot>(
+  stream: FirebaseFirestore.instance
+      .collection('chats/$chatId/messages')
+      .orderBy('timestamp', descending: true)
+      .limit(1)
+      .snapshots(),
+  builder: (context, messageSnapshot) {
+    String lastMessage = '';
+    String time = '';
+    bool isUnread = false;
 
-                      if (messageSnapshot.hasData && messageSnapshot.data!.docs.isNotEmpty) {
-                        final lastMsg = messageSnapshot.data!.docs.first;
-                        final data = lastMsg.data() as Map<String, dynamic>;
-                        lastMessage = data['text'] ?? '';
-                        final timestamp = data['timestamp'] as Timestamp?;
-                        if (timestamp != null) {
-                          final date = timestamp.toDate();
-                          time = '${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-                        }
-                      }
+    if (messageSnapshot.hasData && messageSnapshot.data!.docs.isNotEmpty) {
+      final lastMsg = messageSnapshot.data!.docs.first;
+      final data = lastMsg.data() as Map<String, dynamic>;
+      lastMessage = data['text'] ?? '';
+      final timestamp = data['timestamp'] as Timestamp?;
+      if (timestamp != null) {
+        final date = timestamp.toDate();
+        time = '${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+      }
 
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
-                          child: imageUrl.isEmpty ? Text(name[0]) : null,
-                        ),
-                        title: Text(name),
-                        subtitle: Text(lastMessage),
-                        trailing: Text(time, style: TextStyle(color: Colors.grey)),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChatScreen(
-                                conversation: ChatConversation(
-                                  id: otherUserId,
-                                  name: name,
-                                  imageUrl: imageUrl,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  );
+      final seenBy = List<String>.from(data['seenBy'] ?? []);
+      isUnread = !seenBy.contains(currentUserId);
+    }
+
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+        child: imageUrl.isEmpty ? Text(name[0]) : null,
+      ),
+      title: Text(
+        name,
+        style: TextStyle(fontWeight: isUnread ? FontWeight.bold : FontWeight.normal),
+      ),
+      subtitle: Row(
+        children: [
+          Expanded(
+            child: Text(
+              lastMessage,
+              style: TextStyle(
+                fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+          if (isUnread)
+            const Padding(
+              padding: EdgeInsets.only(left: 8.0),
+              child: Icon(Icons.circle, size: 10, color: Colors.blue),
+            ),
+        ],
+      ),
+      trailing: Text(time, style: const TextStyle(color: Colors.grey)),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(
+              conversation: ChatConversation(
+                id: otherUserId,
+                name: name,
+                imageUrl: imageUrl,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  },
+)
+;
                 },
               );
             },

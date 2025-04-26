@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'edit_profile_screen.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -47,8 +48,15 @@ class ProfileScreen extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.help_outline),
                 title: const Text('Help & Support'),
-                onTap: () {
-                  // TODO: Add Help & Support logic
+                onTap: () async {
+                  const url = 'https://wa.me/917287025149?text=Hello%20I%20need%20help%20with%20my%20account';
+                  if (await canLaunchUrl(Uri.parse(url))) {
+                    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Could not open WhatsApp')),
+                    );
+                  }
                 },
               ),
               ListTile(

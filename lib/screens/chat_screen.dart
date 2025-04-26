@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -20,6 +21,7 @@ class ChatScreenState extends State<ChatScreen> {
   late String currentUserId;
   late String chatId;
   bool _isSending = false;
+  Timer? _typingTimer;
 
   @override
   void initState() {
@@ -33,6 +35,14 @@ class ChatScreenState extends State<ChatScreen> {
         ? '${user1}_$user2'
         : '${user2}_$user1';
   }
+  String _formatTimestamp(Timestamp? timestamp) {
+  if (timestamp == null) return '';
+  final dt = timestamp.toDate();
+  final hour = dt.hour.toString().padLeft(2, '0');
+  final minute = dt.minute.toString().padLeft(2, '0');
+  return "$hour:$minute";
+}
+
 
   void _sendMessage() async {
     final text = _controller.text.trim();
@@ -53,9 +63,11 @@ class ChatScreenState extends State<ChatScreen> {
         'text': text,
         'senderId': currentUserId,
         'timestamp': FieldValue.serverTimestamp(),
+        'seenBy': [currentUserId],
       });
 
       _controller.clear();
+      _updateTyping(false);
     } catch (e) {
       debugPrint("Error sending message: $e");
     } finally {
@@ -63,12 +75,73 @@ class ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void _markMessagesAsSeen(QuerySnapshot snapshot) {
+    for (var doc in snapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      final seenBy = List<String>.from(data['seenBy'] ?? []);
+      final senderId = data['senderId'];
+
+      if (senderId != currentUserId && !seenBy.contains(currentUserId)) {
+        doc.reference.update({
+          'seenBy': FieldValue.arrayUnion([currentUserId]),
+        });
+      }
+    }
+  }
+
+  void _updateTyping(bool isTyping) {
+    _firestore.collection('chats').doc(chatId).set({
+      'typing': {currentUserId: isTyping}
+    }, SetOptions(merge: true));
+  }
+
+  void _onTextChanged(String value) {
+    _updateTyping(true);
+    _typingTimer?.cancel();
+    _typingTimer = Timer(const Duration(seconds: 2), () {
+      _updateTyping(false);
+    });
+  }
+
+  @override
+  void dispose() {
+    _typingTimer?.cancel();
+    _updateTyping(false);
+    _controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final otherUserId = widget.conversation.id;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Chat with ${widget.conversation.name}"),
         backgroundColor: Colors.blueAccent,
+        title: StreamBuilder<DocumentSnapshot>(
+          stream: _firestore.collection('chats').doc(chatId).snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return Text("Chat with ${widget.conversation.name}");
+            }
+
+            final data = snapshot.data!.data() as Map<String, dynamic>;
+            final typing = (data['typing'] ?? {}) as Map<String, dynamic>;
+            final isTyping = typing[otherUserId] == true;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(widget.conversation.name),
+                if (isTyping)
+                  Text(
+                    'Typing...',
+                    style: TextStyle(fontSize: 12, color: Colors.white70),
+                  ),
+              ],
+            );
+          },
+        ),
       ),
       body: Column(
         children: [
@@ -84,6 +157,7 @@ class ChatScreenState extends State<ChatScreen> {
                 }
 
                 final docs = snapshot.data!.docs;
+                _markMessagesAsSeen(snapshot.data!);
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(10),
@@ -91,31 +165,58 @@ class ChatScreenState extends State<ChatScreen> {
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
                     final message = ChatMessage.fromMap(data, currentUserId);
-                    return Align(
-                      alignment: message.isSender
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(
-                            vertical: 6, horizontal: 12),
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 14),
-                        decoration: BoxDecoration(
-                          color: message.isSender
-                              ? Colors.blueAccent
-                              : Colors.grey[300],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          message.text,
-                          style: TextStyle(
-                            color: message.isSender
-                                ? Colors.white
-                                : Colors.black,
-                          ),
-                        ),
-                      ),
-                    );
+                   return Align(
+  alignment: message.isSender
+      ? Alignment.centerRight
+      : Alignment.centerLeft,
+  child: Column(
+    crossAxisAlignment: message.isSender
+        ? CrossAxisAlignment.end
+        : CrossAxisAlignment.start,
+    children: [
+      Container(
+        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+        decoration: BoxDecoration(
+          color: message.isSender
+              ? Colors.blueAccent
+              : Colors.grey[300],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          message.text,
+          style: TextStyle(
+            color: message.isSender
+                ? Colors.white
+                : Colors.black,
+          ),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Text(
+          _formatTimestamp(message.timestamp),
+          style: const TextStyle(fontSize: 10, color: Colors.grey),
+        ),
+      ),
+      if (message.isSender)
+        Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: Text(
+            message.seenBy.contains(widget.conversation.id)
+                ? "✅✅ Seen"
+                : "✅ Sent",
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+            ),
+          ),
+        ),
+    ],
+  ),
+);
+
+
                   },
                 );
               },
@@ -128,6 +229,7 @@ class ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
+                    onChanged: _onTextChanged,
                     decoration: InputDecoration(
                       hintText: "Type a message...",
                       contentPadding:
@@ -164,11 +266,13 @@ class ChatMessage {
   final String text;
   final bool isSender;
   final Timestamp? timestamp;
+  final List<String> seenBy;
 
   ChatMessage({
     required this.text,
     required this.isSender,
     required this.timestamp,
+    required this.seenBy,
   });
 
   factory ChatMessage.fromMap(Map<String, dynamic> data, String currentUserId) {
@@ -176,14 +280,8 @@ class ChatMessage {
       text: data['text'] ?? '',
       isSender: data['senderId'] == currentUserId,
       timestamp: data['timestamp'] ?? Timestamp.now(),
+      seenBy: List<String>.from(data['seenBy'] ?? []),
     );
   }
-
-  Map<String, dynamic> toMap(String senderId) {
-    return {
-      'text': text,
-      'senderId': senderId,
-      'timestamp': timestamp,
-    };
-  }
 }
+
