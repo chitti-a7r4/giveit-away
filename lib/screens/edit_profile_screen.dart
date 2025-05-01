@@ -94,16 +94,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   children: [
                     GestureDetector(
                       onTap: _pickImage,
-                      child: CircleAvatar(
-                        radius: 50,
-                        backgroundImage: _selectedImage != null
-                            ? FileImage(_selectedImage!)
-                            : _imageUrl != null
-                                ? NetworkImage(_imageUrl!) as ImageProvider
-                                : const AssetImage('assets/profile_pic.png'),
-                        child: _selectedImage == null
-                            ? const Icon(Icons.add_a_photo, size: 30)
-                            : null,
+                      child: Stack(
+                        alignment: Alignment.center, // Center the icon
+                        children: [
+                          ClipOval(
+                            child: Container(
+                              width: 100, // Diameter of the circle
+                              height: 100,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                image: DecorationImage(
+                                  image: _selectedImage != null
+                                      ? FileImage(_selectedImage!)
+                                      : _imageUrl != null
+                                          ? NetworkImage(_imageUrl!) as ImageProvider
+                                          : const AssetImage('assets/profile_pic.png'),
+                                  fit: BoxFit.contain, // Ensures the image fits inside the circle
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (_selectedImage == null) // Show the icon only if no image is selected
+                            const Icon(
+                              Icons.add_a_photo,
+                              size: 30,
+                              color: Color.fromARGB(255, 255, 255, 255), // Adjust the color as needed
+                            ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 20),

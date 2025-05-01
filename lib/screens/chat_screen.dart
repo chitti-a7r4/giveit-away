@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'chat_coversation.dart';
+import 'other_user_profile_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   final ChatConversation conversation;
@@ -35,14 +36,20 @@ class ChatScreenState extends State<ChatScreen> {
         ? '${user1}_$user2'
         : '${user2}_$user1';
   }
-  String _formatTimestamp(Timestamp? timestamp) {
-  if (timestamp == null) return '';
-  final dt = timestamp.toDate();
-  final hour = dt.hour.toString().padLeft(2, '0');
-  final minute = dt.minute.toString().padLeft(2, '0');
-  return "$hour:$minute";
-}
 
+  String _formatTimestamp(Timestamp? timestamp) {
+    if (timestamp == null) return '';
+    final dt = timestamp.toDate();
+    final hour = dt.hour.toString().padLeft(2, '0');
+    final minute = dt.minute.toString().padLeft(2, '0');
+    return "$hour:$minute";
+  }
+
+  bool isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+        date1.month == date2.month &&
+        date1.day == date2.day;
+  }
 
   void _sendMessage() async {
     final text = _controller.text.trim();
@@ -113,32 +120,65 @@ class ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final otherUserId = widget.conversation.id;
-
+    // Removed unused variable 'otherUserId'
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blueAccent,
         title: StreamBuilder<DocumentSnapshot>(
-          stream: _firestore.collection('chats').doc(chatId).snapshots(),
+          stream: _firestore.collection('users').doc(widget.conversation.id).snapshots(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
-              return Text("Chat with ${widget.conversation.name}");
+              return const Text("Loading...");
             }
 
-            final data = snapshot.data!.data() as Map<String, dynamic>;
-            final typing = (data['typing'] ?? {}) as Map<String, dynamic>;
-            final isTyping = typing[otherUserId] == true;
+            final userData = snapshot.data!.data() as Map<String, dynamic>;
+            final profilePicUrl = userData['imageUrl'] ?? ''; // Replace 'imageUrl' with the actual field name in Firestore
+            final username = userData['name'] ?? widget.conversation.name;
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(widget.conversation.name),
-                if (isTyping)
-                  Text(
-                    'Typing...',
-                    style: TextStyle(fontSize: 12, color: Colors.white70),
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => OtherUserProfileScreen(userId: widget.conversation.id),
                   ),
-              ],
+                );
+              },
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundImage: profilePicUrl.isNotEmpty
+                        ? NetworkImage(profilePicUrl)
+                        : const AssetImage('assets/profile_pic.png') as ImageProvider,
+                    radius: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        username,
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                      StreamBuilder<DocumentSnapshot>(
+                        stream: _firestore.collection('chats').doc(chatId).snapshots(),
+                        builder: (context, chatSnapshot) {
+                          final isTyping = chatSnapshot.hasData
+                              ? ((chatSnapshot.data!.data() as Map<String, dynamic>)['typing'] ?? {})[widget.conversation.id] == true
+                              : false;
+
+                          return isTyping
+                              ? const Text(
+                                  'Typing...',
+                                  style: TextStyle(fontSize: 12, color: Colors.white70),
+                                )
+                              : const SizedBox.shrink();
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             );
           },
         ),
@@ -165,58 +205,126 @@ class ChatScreenState extends State<ChatScreen> {
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
                     final message = ChatMessage.fromMap(data, currentUserId);
-                   return Align(
-  alignment: message.isSender
-      ? Alignment.centerRight
-      : Alignment.centerLeft,
-  child: Column(
-    crossAxisAlignment: message.isSender
-        ? CrossAxisAlignment.end
-        : CrossAxisAlignment.start,
-    children: [
-      Container(
-        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-        decoration: BoxDecoration(
-          color: message.isSender
-              ? Colors.blueAccent
-              : Colors.grey[300],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          message.text,
-          style: TextStyle(
-            color: message.isSender
-                ? Colors.white
-                : Colors.black,
-          ),
-        ),
-      ),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Text(
-          _formatTimestamp(message.timestamp),
-          style: const TextStyle(fontSize: 10, color: Colors.grey),
-        ),
-      ),
-      if (message.isSender)
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: Text(
-            message.seenBy.contains(widget.conversation.id)
-                ? "✅✅ Seen"
-                : "✅ Sent",
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
-          ),
-        ),
-    ],
-  ),
-);
 
+                    // Get the current message's date
+                    final messageDate = message.timestamp?.toDate();
+                    final now = DateTime.now();
 
+                    // Determine if a date header should be shown
+                    bool showDateHeader = false;
+                    if (index == 0) {
+                      showDateHeader = true; // Always show the date header for the first message
+                    } else {
+                      final previousMessageDate =
+                          (docs[index - 1].data() as Map<String, dynamic>)['timestamp']
+                              ?.toDate();
+                      if (previousMessageDate != null &&
+                          messageDate != null &&
+                          !isSameDay(messageDate, previousMessageDate)) {
+                        showDateHeader = true; // Show the date header if the date changes
+                      }
+                    }
+
+                    // Determine the date label (Today, Yesterday, or specific date)
+                    String dateLabel = '';
+                    if (messageDate != null) {
+                      if (isSameDay(messageDate, now)) {
+                        dateLabel = 'Today';
+                      } else if (isSameDay(messageDate, now.subtract(const Duration(days: 1)))) {
+                        dateLabel = 'Yesterday';
+                      } else {
+                        dateLabel = "${messageDate.day}/${messageDate.month}/${messageDate.year}";
+                      }
+                    }
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (showDateHeader)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Center(
+                              child: Text(
+                                dateLabel,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ),
+                        Align(
+                          alignment: message.isSender
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Column(
+                            crossAxisAlignment: message.isSender
+                                ? CrossAxisAlignment.end
+                                : CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                margin:
+                                    const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                                decoration: BoxDecoration(
+                                  color: message.isSender
+                                      ? Colors.blueAccent
+                                      : Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      message.text,
+                                      style: TextStyle(
+                                        color: message.isSender ? Colors.white : Colors.black,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _formatTimestamp(message.timestamp),
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: message.isSender ? Colors.white70 : Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (message.isSender)
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 16),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        message.seenBy.contains(widget.conversation.id)
+                                            ? Icons.done_all // Double ticks for "Seen"
+                                            : Icons.done,    // Single tick for "Sent"
+                                        size: 16,
+                                        color: message.seenBy.contains(widget.conversation.id)
+                                            ? Colors.blueAccent // Blue for "Seen"
+                                            : Colors.grey,      // Grey for "Sent"
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        message.seenBy.contains(widget.conversation.id) ? "Seen" : "Sent",
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
                   },
                 );
               },

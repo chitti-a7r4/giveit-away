@@ -44,7 +44,6 @@ class _LoginScreenState extends State<LoginScreen> {
         final userDoc = await userDocRef.get();
 
         if (!userDoc.exists) {
-          // Create user document for first-time Google Sign-In users
           await userDocRef.set({
             'email': user.email,
             'name': user.displayName ?? '',
@@ -76,6 +75,42 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+
+Future<void> _forgotPassword() async {
+  final email = _emailController.text.trim();
+
+  if (email.isEmpty || !email.contains('@')) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please enter a valid email to reset password.')),
+    );
+    return;
+  }
+
+  try {
+    // Check if email exists in Firestore
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: email)
+        .limit(1)
+        .get();
+
+    if (querySnapshot.docs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No user found with this email.')),
+      );
+      return;
+    }
+
+    await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Password reset email sent. Check your inbox.')),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Something went wrong. Please try again.')),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -125,8 +160,18 @@ class _LoginScreenState extends State<LoginScreen> {
                       validator: (value) =>
                           value != null && value.length >= 6 ? null : 'Minimum 6 characters',
                     ),
-                    const SizedBox(height: 30),
-
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _forgotPassword,
+                        child: const Text(
+                          'Forgot Password?',
+                          style: TextStyle(color: Colors.black54),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
                       height: 48,

@@ -16,6 +16,12 @@ class ProfileScreen extends StatelessWidget {
     return doc.data();
   }
 
+  String _formatDate(Timestamp? timestamp) {
+    if (timestamp == null) return 'Unknown';
+    final date = timestamp.toDate();
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
   void _showSettingsMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -128,6 +134,7 @@ class ProfileScreen extends StatelessWidget {
                   final name = userData['name'] ?? 'Anonymous';
                   final bio = userData['bio'] ?? 'No bio added';
                   final profilePic = userData['imageUrl'] ?? '';
+                  final createdAt = userData['createdAt'] as Timestamp?;
                   final user = FirebaseAuth.instance.currentUser;
 
                   return Padding(
@@ -161,6 +168,15 @@ class ProfileScreen extends StatelessWidget {
                             'Bio: $bio',
                             style: const TextStyle(fontSize: 16, color: Colors.grey),
                             textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+
+                        // User since
+                        Center(
+                          child: Text(
+                            'User since: ${_formatDate(createdAt)}',
+                            style: const TextStyle(fontSize: 15, color: Colors.grey),
                           ),
                         ),
                         const SizedBox(height: 30),
