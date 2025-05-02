@@ -120,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
     {'name': 'Jaipur', 'icon': Icons.festival}, // Example icon for Jaipur
     {'name': 'Lucknow', 'icon': Icons.mosque}, // Example icon for Lucknow
     {'name': 'Ahmedabad', 'icon': Icons.factory}, // Example icon for Ahmedabad
-    {'name': 'Chandigarh', 'icon': Icons.park}, // Example icon for Chandigarh
+    {'name': 'Others', 'icon': Icons.apartment}, // Example icon for Chandigarh
   ];
 
   final List<Map<String, dynamic>> categories = [

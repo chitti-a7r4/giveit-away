@@ -271,6 +271,12 @@ class _ItemViewScreenState extends State<ItemViewScreen> {
                                 name: widget.donorName,
                                 imageUrl: widget.donorImageUrl,
                               ),
+                              faqs: [
+                                "Is this item still available?",
+                                "Can you provide more details about the item?",
+                                "What is the condition of the item?",
+                                "Can I pick it up today?",
+                              ], // Add your FAQs here
                             ),
                           ),
                         );

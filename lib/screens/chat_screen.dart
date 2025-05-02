@@ -7,8 +7,13 @@ import 'other_user_profile_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   final ChatConversation conversation;
+  final List<String>? faqs; // Add FAQs as an optional parameter
 
-  const ChatScreen({super.key, required this.conversation});
+  const ChatScreen({
+    super.key,
+    required this.conversation,
+    this.faqs, // Initialize FAQs
+  });
 
   @override
   ChatScreenState createState() => ChatScreenState();
@@ -120,7 +125,6 @@ class ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Removed unused variable 'otherUserId'
     return Scaffold(
       appBar: AppBar(
         flexibleSpace: Container(
@@ -140,7 +144,7 @@ class ChatScreenState extends State<ChatScreen> {
             }
 
             final userData = snapshot.data!.data() as Map<String, dynamic>;
-            final profilePicUrl = userData['imageUrl'] ?? ''; // Replace 'imageUrl' with the actual field name in Firestore
+            final profilePicUrl = userData['imageUrl'] ?? '';
             final username = userData['name'] ?? widget.conversation.name;
 
             return GestureDetector(
@@ -339,6 +343,52 @@ class ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
+          if (widget.faqs != null && widget.faqs!.isNotEmpty) // Check if FAQs exist
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white, // Light purple background
+                borderRadius: BorderRadius.circular(12), // Rounded corners
+                border: Border.all(color: Colors.grey[300]!, width: 1), // Border with color and width
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1), // Subtle shadow
+                    blurRadius: 6,
+                    offset: const Offset(0, 3), // Shadow position
+                  ),
+                ],
+              ),
+              margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), // Add margin for spacing
+              padding: const EdgeInsets.all(10), // Padding inside the container
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Frequently Asked Questions",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  ...widget.faqs!.map((faq) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: GestureDetector(
+                          onTap: () {
+                            _controller.text = faq; // Pre-fill the message input
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(8), // Rounded corners for each FAQ
+                            ),
+                            child: Text(
+                              faq,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ),
+                      )),
+                ],
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.all(10),
             child: Row(
