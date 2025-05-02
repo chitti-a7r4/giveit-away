@@ -23,38 +23,72 @@ class DonationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            imagePath.isNotEmpty ? imagePath : 'https://via.placeholder.com/50',
-            width: 50,
-            height: 50,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return Image.asset('assets/images/placeholder.png', width: 50, height: 50);
-            },
-          ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 4,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image Section
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              child: Image.network(
+                imagePath.isNotEmpty ? imagePath : 'https://via.placeholder.com/150',
+                height: 120,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Image.asset(
+                    'assets/images/placeholder.png',
+                    height: 120,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  );
+                },
+              ),
+            ),
+            // Text Section
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    category,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    location,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[500],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        subtitle: Text('$category\n$location', style: TextStyle(fontSize: 14, color: Colors.grey[700])),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.green[100],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            'Available',
-            style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold),
-          ),
-        ),
-        onTap: onTap,
       ),
     );
   }
@@ -71,12 +105,35 @@ class _HomeScreenState extends State<HomeScreen> {
   String selectedLocation = 'All';
   String selectedCategory = 'All';
 
-  final List<String> locations = [
-    'All', 'Shillong', 'Guwahati', 'Delhi', 'Hyderabad' // ➕ add more
+  final List<Map<String, dynamic>> locations = [
+    {'name': 'All', 'icon': Icons.public},
+    {'name': 'Shillong', 'icon': Icons.terrain}, // Example icon for Shillong
+    {'name': 'Guwahati', 'icon': Icons.water}, // Example icon for Guwahati
+    {'name': 'Delhi', 'icon': Icons.account_balance}, // Example icon for Delhi
+    {'name': 'Hyderabad', 'icon': Icons.fort}, // Charminar-like icon
+    {'name': 'Mumbai', 'icon': Icons.apartment}, // Example icon for Mumbai
+    {'name': 'Chennai', 'icon': Icons.beach_access}, // Example icon for Chennai
+    {'name': 'Kolkata', 'icon': Icons.tram}, // Example icon for Kolkata
+    {'name': 'Bangalore', 'icon': Icons.computer}, // Example icon for Bangalore
+    {'name': 'Pune', 'icon': Icons.school}, // Example icon for Pune
+    {'name': 'Jaipur', 'icon': Icons.festival}, // Example icon for Jaipur
+    {'name': 'Lucknow', 'icon': Icons.mosque}, // Example icon for Lucknow
+    {'name': 'Ahmedabad', 'icon': Icons.factory}, // Example icon for Ahmedabad
+    {'name': 'Chandigarh', 'icon': Icons.park}, // Example icon for Chandigarh
   ];
 
-  final List<String> categories = [
-    'All', 'Electronics', 'Furniture', 'Clothing', 'Books', 'Others'
+  final List<Map<String, dynamic>> categories = [
+    {'name': 'All', 'icon': Icons.all_inclusive},
+    {'name': 'Electronics', 'icon': Icons.devices},
+    {'name': 'Furniture', 'icon': Icons.chair},
+    {'name': 'Clothing', 'icon': Icons.checkroom},
+    {'name': 'Books', 'icon': Icons.book},
+    {'name': 'Coupons', 'icon': Icons.local_offer}, // New category
+    {'name': 'Toys', 'icon': Icons.toys},
+    {'name': 'Groceries', 'icon': Icons.shopping_cart},
+    {'name': 'Appliances', 'icon': Icons.kitchen},
+    {'name': 'Sports Equipment', 'icon': Icons.sports_cricket},
+    {'name': 'Others', 'icon': Icons.more_horiz},
   ];
 
   // Function to get current location
@@ -137,66 +194,110 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          //  const SizedBox(height: 15),
             const Text(
               'Give things away easily',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
 
-            // 🌍 Location Dropdown and Current Location Button
+            // 🌍 Location Dropdown and Category Dropdown
             Row(
               children: [
-                const Text("Location: ", style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(width: 10),
-                DropdownButton<String>(
-                  value: selectedLocation,
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedLocation = value;
-                      });
-                    }
-                  },
-                  items: locations.map((loc) {
-                    return DropdownMenuItem(
-                      value: loc,
-                      child: Text(loc),
-                    );
-                  }).toList(),
+                // 🌍 Location Dropdown and Locator Button
+                SizedBox(
+                  width: 193, // Set a specific width for the Location dropdown
+                  child: Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 18), // Location Icon
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: DropdownButton<String>(
+                          value: selectedLocation,
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                selectedLocation = value;
+                              });
+                            }
+                          },
+                          isExpanded: true,
+                          items: locations.map((loc) {
+                            return DropdownMenuItem<String>(
+                              value: loc['name'] as String,
+                              child: Row(
+                                children: [
+                                  Icon(loc['icon'], size: 18, color: Colors.grey[700]), // City-specific icon
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      loc['name'] as String,
+                                      style: const TextStyle(fontSize: 14),
+                                      maxLines: 1, // Limit to one line
+                                      overflow: TextOverflow.ellipsis, // Show "..." for overflow
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.my_location),
+                        onPressed: _getCurrentLocation,
+                      ),
+                    ],
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.my_location),
-                  onPressed: _getCurrentLocation,
+
+                const SizedBox(width: 5), // Reduced gap between the two dropdowns
+
+                // 📦 Category Dropdown
+                SizedBox(
+                  width: 180, // Set a specific width for the Category dropdown
+                  child: Row(
+                    children: [
+                      const Icon(Icons.category, size: 18), // Category Icon
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: DropdownButton<String>(
+                          value: selectedCategory,
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                selectedCategory = value;
+                              });
+                            }
+                          },
+                          isExpanded: true,
+                          items: categories.map((cat) {
+                            return DropdownMenuItem(
+                              value: cat['name'] as String,
+                              child: Row(
+                                children: [
+                                  Icon(cat['icon'], size: 18, color: Colors.grey[700]),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      cat['name'] as String,
+                                      style: const TextStyle(fontSize: 14),
+                                      softWrap: true,
+                                      overflow: TextOverflow.visible,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
 
             const SizedBox(height: 5),
-
-            // 📦 Category Dropdown
-            Row(
-              children: [
-                const Text("Category: ", style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(width: 10),
-                DropdownButton<String>(
-                  value: selectedCategory,
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedCategory = value;
-                      });
-                    }
-                  },
-                  items: categories.map((cat) {
-                    return DropdownMenuItem(
-                      value: cat,
-                      child: Text(cat),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
 
             // 🔄 Posts List
             Expanded(
@@ -230,9 +331,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     return const Center(child: Text('No items found for this location and category.'));
                   }
 
-                  return ListView(
-                    children: filteredDocs.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
+                  return GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2, // Number of columns
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 0.8, // Adjust for card height/width ratio
+                    ),
+                    itemCount: filteredDocs.length,
+                    itemBuilder: (context, index) {
+                      final data = filteredDocs[index].data() as Map<String, dynamic>;
 
                       final imagePath = data['images'] != null && data['images'].isNotEmpty
                           ? data['images'][0]
@@ -262,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         },
                       );
-                    }).toList(),
+                    },
                   );
                 },
               ),

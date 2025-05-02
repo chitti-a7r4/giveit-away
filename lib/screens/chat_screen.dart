@@ -123,7 +123,15 @@ class ChatScreenState extends State<ChatScreen> {
     // Removed unused variable 'otherUserId'
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blueAccent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF4A90E2), Color(0xFF007AFF)], // Gradient colors
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: StreamBuilder<DocumentSnapshot>(
           stream: _firestore.collection('users').doc(widget.conversation.id).snapshots(),
           builder: (context, snapshot) {
@@ -158,7 +166,11 @@ class ChatScreenState extends State<ChatScreen> {
                     children: [
                       Text(
                         username,
-                        style: const TextStyle(fontSize: 18),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                       StreamBuilder<DocumentSnapshot>(
                         stream: _firestore.collection('chats').doc(chatId).snapshots(),
@@ -182,6 +194,8 @@ class ChatScreenState extends State<ChatScreen> {
             );
           },
         ),
+        centerTitle: false,
+        elevation: 0,
       ),
       body: Column(
         children: [
@@ -258,32 +272,42 @@ class ChatScreenState extends State<ChatScreen> {
                           alignment: message.isSender
                               ? Alignment.centerRight
                               : Alignment.centerLeft,
-                          child: Column(
-                            crossAxisAlignment: message.isSender
-                                ? CrossAxisAlignment.end
-                                : CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                margin:
-                                    const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-                                decoration: BoxDecoration(
-                                  color: message.isSender
-                                      ? Colors.blueAccent
-                                      : Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                            decoration: BoxDecoration(
+                              gradient: message.isSender
+                                  ? const LinearGradient(
+                                      colors: [Color(0xFF4A90E2), Color(0xFF007AFF)], // Gradient for sender
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    )
+                                  : null, // No gradient for receiver
+                              color: message.isSender ? null : Colors.grey[300], // Solid color for receiver
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2), // Subtle shadow for depth
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      message.text,
-                                      style: TextStyle(
-                                        color: message.isSender ? Colors.white : Colors.black,
-                                      ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    message.text,
+                                    style: TextStyle(
+                                      color: message.isSender ? Colors.white : Colors.black,
                                     ),
-                                    const SizedBox(height: 4),
+                                  ),
+                                ),
+                                const SizedBox(width: 8), // Space between message and timestamp
+                                Row(
+                                  children: [
                                     Text(
                                       _formatTimestamp(message.timestamp),
                                       style: TextStyle(
@@ -291,36 +315,21 @@ class ChatScreenState extends State<ChatScreen> {
                                         color: message.isSender ? Colors.white70 : Colors.black54,
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                              if (message.isSender)
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 16),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
+                                    const SizedBox(width: 4), // Space between timestamp and ticks
+                                    if (message.isSender)
                                       Icon(
                                         message.seenBy.contains(widget.conversation.id)
                                             ? Icons.done_all // Double ticks for "Seen"
                                             : Icons.done,    // Single tick for "Sent"
                                         size: 16,
                                         color: message.seenBy.contains(widget.conversation.id)
-                                            ? Colors.blueAccent // Blue for "Seen"
-                                            : Colors.grey,      // Grey for "Sent"
+                                            ? Colors.white // White for "Seen"
+                                            : Colors.white70, // Grey for "Sent"
                                       ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        message.seenBy.contains(widget.conversation.id) ? "Seen" : "Sent",
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                  ],
                                 ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ],

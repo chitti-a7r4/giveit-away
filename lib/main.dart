@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_app_check/firebase_app_check.dart'; // Import the App Check package
 import 'package:flutter/services.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart'; // Import Google Mobile Ads package
 import 'firebase_options.dart';
 import 'screens/home_screen.dart';
 import 'screens/post_screen.dart';
@@ -16,7 +17,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-    WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Google Mobile Ads SDK
+  MobileAds.instance.initialize();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -25,12 +28,10 @@ void main() async {
     ),
   );
 
-  // Activate Firebase App Check using Play Integrity for Android
+  // Activate Firebase App Check using Debug provider for testing
   await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.playIntegrity, // Use Play Integrity as the Android provider
+    androidProvider: AndroidProvider.debug, // Use Debug provider for testing
   );
-    WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
 
   runApp(const GiveItAwayApp());
 }
