@@ -31,8 +31,18 @@ class _PostScreenState extends State<PostScreen> {
   final picker = ImagePicker();
 
   String? _category;
-  final List<String> _categories = ['Electronics', 'Furniture', 'Clothing', 'Books', 'Others'];
-
+  final List<Map<String, dynamic>> _categories = [
+    {'name': 'Electronics', 'icon': Icons.devices},
+    {'name': 'Furniture', 'icon': Icons.chair},
+    {'name': 'Clothing', 'icon': Icons.checkroom},
+    {'name': 'Books', 'icon': Icons.book},
+    {'name': 'Coupons', 'icon': Icons.local_offer},
+    {'name': 'Toys', 'icon': Icons.toys},
+    {'name': 'Groceries', 'icon': Icons.shopping_cart},
+    {'name': 'Appliances', 'icon': Icons.kitchen},
+    {'name': 'Sports Equipment', 'icon': Icons.sports_cricket},
+    {'name': 'Others', 'icon': Icons.more_horiz},
+  ];
   double _uploadProgress = 0.0;
   bool _isUploading = false;
 
@@ -266,10 +276,16 @@ class _PostScreenState extends State<PostScreen> {
                   prefixIcon: Icon(Icons.category),
                   border: OutlineInputBorder(),
                 ),
-                items: _categories.map((String category) {
+                items: _categories.map((category) {
                   return DropdownMenuItem<String>(
-                    value: category,
-                    child: Text(category),
+                    value: category['name'],
+                    child: Row(
+                      children: [
+                        Icon(category['icon'], size: 18, color: Colors.grey[700]),
+                        const SizedBox(width: 8),
+                        Text(category['name']),
+                      ],
+                    ),
                   );
                 }).toList(),
                 onChanged: (newCategory) {

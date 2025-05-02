@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'item_view_screen.dart';
 
 // 🔼 Custom widget for each donation item card
@@ -194,10 +195,63 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Give things away easily',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            // Replace the text with a carousel slider
+            CarouselSlider(
+              options: CarouselOptions(
+                height: 150,
+                autoPlay: true,
+                enlargeCenterPage: true,
+                aspectRatio: 16 / 9,
+                autoPlayInterval: const Duration(seconds: 3),
+              ),
+              items: [
+                'Sharing is caring.',
+                'Happiness grows by sharing.',
+                'The joy of giving is the greatest joy.',
+                'What we share, we multiply.',
+                'Giving is the ultimate act of kindness.',
+              ].map((quote) {
+                return Builder(
+                  builder: (BuildContext context) {
+                    return Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 4,
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color(0xFF42A5F5), // Light Blue
+                              Color(0xFF7E57C2), // Purple
+                              Color(0xFF26C6DA), // Teal
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Text(
+                            quote,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 16, // Slightly larger font size for better visibility
+                              fontWeight: FontWeight.w600, // Semi-bold for emphasis
+                              fontFamily: 'Roboto', // Use a clean and modern font
+                              letterSpacing: 1.2, // Add spacing between letters for elegance
+                              color: Colors.white, // Ensure good contrast with the gradient background
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }).toList(),
             ),
+
             const SizedBox(height: 20),
 
             // 🌍 Location Dropdown and Category Dropdown
