@@ -161,9 +161,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (placemarks.isNotEmpty) {
       final city = placemarks.first.locality;
-      setState(() {
-        selectedLocation = city ?? 'Unknown';
-      });
+      if (city != null && city.isNotEmpty) {
+        setState(() {
+          selectedLocation = city;
+
+          // Add the fetched location to the locations list if it doesn't exist
+          if (!locations.any((loc) => loc['name'] == city)) {
+            locations.add({'name': city, 'icon': Icons.location_city});
+          }
+        });
+      }
     }
   }
 
@@ -254,46 +261,102 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(height: 20),
 
+            // 🌍 Locations List
+            SizedBox(
+              height: 100, // Adjust height as needed
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: locations.length,
+                itemBuilder: (context, index) {
+                  final location = locations[index];
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedLocation = location['name'];
+                      });
+                    },
+                    child: Card(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 4,
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Container(
+                        width: 100, // Adjust width as needed
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: selectedLocation == location['name']
+                              ? Colors.blue[100]
+                              : Colors.white,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              location['icon'],
+                              size: 30,
+                              color: selectedLocation == location['name']
+                                  ? Colors.blue
+                                  : Colors.grey[700],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              location['name'],
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: selectedLocation == location['name']
+                                    ? Colors.blue
+                                    : Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
             // 🌍 Location Dropdown and Category Dropdown
             Row(
               children: [
-                // 🌍 Location Dropdown and Locator Button
+                // 🌍 Location Autocomplete and Locator Button
                 SizedBox(
-                  width: 193, // Set a specific width for the Location dropdown
+                  width: 193, // Set a specific width for the Location autocomplete
                   child: Row(
                     children: [
                       const Icon(Icons.location_on, size: 18), // Location Icon
                       const SizedBox(width: 10),
                       Expanded(
-                        child: DropdownButton<String>(
-                          value: selectedLocation,
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() {
-                                selectedLocation = value;
-                              });
+                        child: Autocomplete<String>(
+                          optionsBuilder: (TextEditingValue textEditingValue) {
+                            if (textEditingValue.text.isEmpty) {
+                              return const Iterable<String>.empty();
                             }
+                            return locations
+                                .map((loc) => loc['name'] as String)
+                                .where((location) => location.toLowerCase().contains(textEditingValue.text.toLowerCase()));
                           },
-                          isExpanded: true,
-                          items: locations.map((loc) {
-                            return DropdownMenuItem<String>(
-                              value: loc['name'] as String,
-                              child: Row(
-                                children: [
-                                  Icon(loc['icon'], size: 18, color: Colors.grey[700]), // City-specific icon
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(
-                                      loc['name'] as String,
-                                      style: const TextStyle(fontSize: 14),
-                                      maxLines: 1, // Limit to one line
-                                      overflow: TextOverflow.ellipsis, // Show "..." for overflow
-                                    ),
-                                  ),
-                                ],
+                          onSelected: (String selection) {
+                            setState(() {
+                              selectedLocation = selection;
+                            });
+                          },
+                          fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
+                            textEditingController.text = selectedLocation; // Sync the controller with the selected location
+                            return TextFormField(
+                              controller: textEditingController,
+                              focusNode: focusNode,
+                              decoration: const InputDecoration(
+                                labelText: 'Search Location',
+                                border: OutlineInputBorder(),
                               ),
                             );
-                          }).toList(),
+                          },
                         ),
                       ),
                       IconButton(

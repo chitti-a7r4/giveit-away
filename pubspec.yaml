@@ -53,6 +53,7 @@ dependencies:
   url_launcher: ^6.3.1
   google_mobile_ads: ^6.0.0
   dropdown_search: ^6.0.2
+  csv: ^6.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -78,11 +79,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/vaccum.png
-    - assets/tshirt.png
-    - assets/lamp.png
-    - assets/chocolate.png
-    - assets/profile_pic.png
+    - assets/cities.csv
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

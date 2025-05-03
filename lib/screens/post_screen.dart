@@ -8,8 +8,18 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:image/image.dart' as img;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:csv/csv.dart';
 
 final Logger _logger = Logger();
+
+List<String> _cities = [];
+
+Future<void> _loadCities() async {
+  final rawData = await rootBundle.loadString('assets/cities.csv');
+  List<List<dynamic>> csvData = const CsvToListConverter().convert(rawData);
+  _cities = csvData.map((row) => row[0].toString()).toList();
+}
 
 class PostScreen extends StatefulWidget {
   const PostScreen({super.key});
@@ -45,6 +55,12 @@ class _PostScreenState extends State<PostScreen> {
   ];
   double _uploadProgress = 0.0;
   bool _isUploading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCities();
+  }
 
   Future<void> _pickImages() async {
     final pickedFiles = await picker.pickMultiImage();
@@ -129,7 +145,7 @@ class _PostScreenState extends State<PostScreen> {
       _logger.i("Fetched location: $address");
 
       setState(() {
-        _locationController.text = address;
+        _locationController.text = address; // This will now reflect in the Autocomplete field
       });
     } catch (e) {
       _logger.e("Error getting location: $e");
@@ -297,13 +313,27 @@ class _PostScreenState extends State<PostScreen> {
                     value == null ? 'Please select a category' : null,
               ),
               const SizedBox(height: 20),
-              TextFormField(
-                controller: _locationController,
-                decoration: const InputDecoration(
-                  labelText: 'Location',
-                  prefixIcon: Icon(Icons.location_on_outlined),
-                  border: OutlineInputBorder(),
-                ),
+              Autocomplete<String>(
+                optionsBuilder: (TextEditingValue textEditingValue) {
+                  if (textEditingValue.text.isEmpty) {
+                    return const Iterable<String>.empty();
+                  }
+                  return _cities.where((city) => city.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                },
+                onSelected: (String selection) {
+                  _locationController.text = selection;
+                },
+                fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
+                  return TextFormField(
+                    controller: _locationController,
+                    focusNode: focusNode,
+                    decoration: const InputDecoration(
+                      labelText: 'Location',
+                      prefixIcon: Icon(Icons.location_on_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 10),
               Align(
