@@ -347,6 +347,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   setState(() {
                                     selectedLocation = selection;
                                   });
+                                  // Unfocus the text field after selection
+                                  FocusScope.of(context).unfocus();
                                 },
                                 fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
                                   textEditingController.text = selectedLocation;
