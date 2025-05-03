@@ -197,303 +197,309 @@ class _HomeScreenState extends State<HomeScreen> {
         centerTitle: true,
       ),
       backgroundColor: Colors.grey[100],
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 30),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Replace the text with a carousel slider
-            CarouselSlider(
-              options: CarouselOptions(
-                height: 150,
-                autoPlay: true,
-                enlargeCenterPage: true,
-                aspectRatio: 16 / 9,
-                autoPlayInterval: const Duration(seconds: 3),
-              ),
-              items: [
-                'Sharing is caring.',
-                'Happiness grows by sharing.',
-                'The joy of giving is the greatest joy.',
-                'What we share, we multiply.',
-                'Giving is the ultimate act of kindness.',
-              ].map((quote) {
-                return Builder(
-                  builder: (BuildContext context) {
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 4,
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFF42A5F5), // Light Blue
-                              Color(0xFF7E57C2), // Purple
-                              Color(0xFF26C6DA), // Teal
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Center(
-                          child: Text(
-                            quote,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 16, // Slightly larger font size for better visibility
-                              fontWeight: FontWeight.w600, // Semi-bold for emphasis
-                              fontFamily: 'Roboto', // Use a clean and modern font
-                              letterSpacing: 1.2, // Add spacing between letters for elegance
-                              color: Colors.white, // Ensure good contrast with the gradient background
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: 20),
-
-            // 🌍 Locations List
-            SizedBox(
-              height: 100, // Adjust height as needed
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: locations.length,
-                itemBuilder: (context, index) {
-                  final location = locations[index];
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedLocation = location['name'];
-                      });
-                    },
-                    child: Card(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 4,
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Container(
-                        width: 100, // Adjust width as needed
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color: selectedLocation == location['name']
-                              ? Colors.blue[100]
-                              : Colors.white,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              location['icon'],
-                              size: 30,
-                              color: selectedLocation == location['name']
-                                  ? Colors.blue
-                                  : Colors.grey[700],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              location['name'],
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: selectedLocation == location['name']
-                                    ? Colors.blue
-                                    : Colors.grey[700],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+      body: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 30),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate(
+                [
+                  // Carousel Slider
+                  CarouselSlider(
+                    options: CarouselOptions(
+                      height: 150,
+                      autoPlay: true,
+                      enlargeCenterPage: true,
+                      aspectRatio: 16 / 9,
+                      autoPlayInterval: const Duration(seconds: 3),
                     ),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // 🌍 Location Dropdown and Category Dropdown
-            Row(
-              children: [
-                // 🌍 Location Autocomplete and Locator Button
-                SizedBox(
-                  width: 193, // Set a specific width for the Location autocomplete
-                  child: Row(
-                    children: [
-                      const Icon(Icons.location_on, size: 18), // Location Icon
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Autocomplete<String>(
-                          optionsBuilder: (TextEditingValue textEditingValue) {
-                            if (textEditingValue.text.isEmpty) {
-                              return const Iterable<String>.empty();
-                            }
-                            return locations
-                                .map((loc) => loc['name'] as String)
-                                .where((location) => location.toLowerCase().contains(textEditingValue.text.toLowerCase()));
-                          },
-                          onSelected: (String selection) {
-                            setState(() {
-                              selectedLocation = selection;
-                            });
-                          },
-                          fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
-                            textEditingController.text = selectedLocation; // Sync the controller with the selected location
-                            return TextFormField(
-                              controller: textEditingController,
-                              focusNode: focusNode,
-                              decoration: const InputDecoration(
-                                labelText: 'Search Location',
-                                border: OutlineInputBorder(),
+                    items: [
+                      'Sharing is caring.',
+                      'Happiness grows by sharing.',
+                      'The joy of giving is the greatest joy.',
+                      'What we share, we multiply.',
+                      'Giving is the ultimate act of kindness.',
+                    ].map((quote) {
+                      return Builder(
+                        builder: (BuildContext context) {
+                          return Card(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 4,
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF42A5F5), // Light Blue
+                                    Color(0xFF7E57C2), // Purple
+                                    Color(0xFF26C6DA), // Teal
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                            );
-                          },
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.my_location),
-                        onPressed: _getCurrentLocation,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(width: 5), // Reduced gap between the two dropdowns
-
-                // 📦 Category Dropdown
-                SizedBox(
-                  width: 180, // Set a specific width for the Category dropdown
-                  child: Row(
-                    children: [
-                      const Icon(Icons.category, size: 18), // Category Icon
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: DropdownButton<String>(
-                          value: selectedCategory,
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() {
-                                selectedCategory = value;
-                              });
-                            }
-                          },
-                          isExpanded: true,
-                          items: categories.map((cat) {
-                            return DropdownMenuItem(
-                              value: cat['name'] as String,
-                              child: Row(
-                                children: [
-                                  Icon(cat['icon'], size: 18, color: Colors.grey[700]),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(
-                                      cat['name'] as String,
-                                      style: const TextStyle(fontSize: 14),
-                                      softWrap: true,
-                                      overflow: TextOverflow.visible,
-                                    ),
+                              child: Center(
+                                child: Text(
+                                  quote,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: 'Roboto',
+                                    letterSpacing: 1.2,
+                                    color: Colors.white,
                                   ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 5),
-
-            // 🔄 Posts List
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('posts')
-                    .orderBy('timestamp', descending: true)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(child: Text('No items available yet.'));
-                  }
-
-                  // ⛏️ Filter data by selected location and category
-                  final filteredDocs = snapshot.data!.docs.where((doc) {
-                    final data = doc.data() as Map<String, dynamic>;
-                    final location = data['location'] ?? '';
-                    final category = data['category'] ?? '';
-
-                    bool locationMatch = selectedLocation == 'All' || location.toString().toLowerCase().startsWith(selectedLocation.toLowerCase());
-                    bool categoryMatch = selectedCategory == 'All' || category.toString().toLowerCase().startsWith(selectedCategory.toLowerCase());
-
-                    return locationMatch && categoryMatch;
-                  }).toList();
-
-                  if (filteredDocs.isEmpty) {
-                    return const Center(child: Text('No items found for this location and category.'));
-                  }
-
-                  return GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2, // Number of columns
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 0.8, // Adjust for card height/width ratio
-                    ),
-                    itemCount: filteredDocs.length,
-                    itemBuilder: (context, index) {
-                      final data = filteredDocs[index].data() as Map<String, dynamic>;
-
-                      final imagePath = data['images'] != null && data['images'].isNotEmpty
-                          ? data['images'][0]
-                          : '';
-
-                      return DonationCard(
-                        title: data['title'] ?? 'No Title',
-                        category: data['category'] ?? 'Unknown',
-                        location: data['location'] ?? 'Unknown',
-                        imagePath: imagePath,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ItemViewScreen(
-                                itemName: data['title'] ?? '',
-                                description: data['description'] ?? '',
-                                category: data['category'] ?? '',
-                                contactInfo: data['contactInfo'] ?? '',
-                                location: data['location'] ?? '',
-                                imageUrls: List<String>.from(data['images'] ?? []),
-                                donorName: data['userName'] ?? 'Unknown Donor',
-                                donorImageUrl: data['userProfileImageUrl'] ?? '',
-                                uid: data['uid'] ?? '',
+                                ),
                               ),
                             ),
                           );
                         },
                       );
-                    },
-                  );
-                },
+                    }).toList(),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Locations List
+                  SizedBox(
+                    height: 100,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: locations.length,
+                      itemBuilder: (context, index) {
+                        final location = locations[index];
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedLocation = location['name'];
+                            });
+                          },
+                          child: Card(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 4,
+                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Container(
+                              width: 100,
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                color: selectedLocation == location['name']
+                                    ? Colors.blue[100]
+                                    : Colors.white,
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    location['icon'],
+                                    size: 30,
+                                    color: selectedLocation == location['name']
+                                        ? Colors.blue
+                                        : Colors.grey[700],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    location['name'],
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: selectedLocation == location['name']
+                                          ? Colors.blue
+                                          : Colors.grey[700],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Location Dropdown and Category Dropdown
+                  Row(
+                    children: [
+                      // Location Autocomplete and Locator Button
+                      SizedBox(
+                        width: 193,
+                        child: Row(
+                          children: [
+                            const Icon(Icons.location_on, size: 18),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Autocomplete<String>(
+                                optionsBuilder: (TextEditingValue textEditingValue) {
+                                  if (textEditingValue.text.isEmpty) {
+                                    return const Iterable<String>.empty();
+                                  }
+                                  return locations
+                                      .map((loc) => loc['name'] as String)
+                                      .where((location) => location.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                                },
+                                onSelected: (String selection) {
+                                  setState(() {
+                                    selectedLocation = selection;
+                                  });
+                                },
+                                fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
+                                  textEditingController.text = selectedLocation;
+                                  return TextFormField(
+                                    controller: textEditingController,
+                                    focusNode: focusNode,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Search Location',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.my_location),
+                              onPressed: _getCurrentLocation,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(width: 5),
+
+                      // Category Dropdown
+                      SizedBox(
+                        width: 180,
+                        child: Row(
+                          children: [
+                            const Icon(Icons.category, size: 18),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: DropdownButton<String>(
+                                value: selectedCategory,
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setState(() {
+                                      selectedCategory = value;
+                                    });
+                                  }
+                                },
+                                isExpanded: true,
+                                items: categories.map((cat) {
+                                  return DropdownMenuItem(
+                                    value: cat['name'] as String,
+                                    child: Row(
+                                      children: [
+                                        Icon(cat['icon'], size: 18, color: Colors.grey[700]),
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text(
+                                            cat['name'] as String,
+                                            style: const TextStyle(fontSize: 14),
+                                            softWrap: true,
+                                            overflow: TextOverflow.visible,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 5),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+
+          // Posts List
+          SliverToBoxAdapter(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('posts')
+                  .orderBy('timestamp', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(child: Text('No items available yet.'));
+                }
+
+                final filteredDocs = snapshot.data!.docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final location = data['location'] ?? '';
+                  final category = data['category'] ?? '';
+
+                  bool locationMatch = selectedLocation == 'All' || location.toString().toLowerCase().startsWith(selectedLocation.toLowerCase());
+                  bool categoryMatch = selectedCategory == 'All' || category.toString().toLowerCase().startsWith(selectedCategory.toLowerCase());
+
+                  return locationMatch && categoryMatch;
+                }).toList();
+
+                if (filteredDocs.isEmpty) {
+                  return const Center(child: Text('No items found for this location and category.'));
+                }
+
+                return GridView.builder(
+                  shrinkWrap: true, // Ensures the GridView doesn't take infinite height
+                  physics: const NeverScrollableScrollPhysics(), // Prevents nested scrolling issues
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 0.8,
+                  ),
+                  itemCount: filteredDocs.length,
+                  itemBuilder: (context, index) {
+                    final data = filteredDocs[index].data() as Map<String, dynamic>;
+
+                    final imagePath = data['images'] != null && data['images'].isNotEmpty
+                        ? data['images'][0]
+                        : '';
+
+                    return DonationCard(
+                      title: data['title'] ?? 'No Title',
+                      category: data['category'] ?? 'Unknown',
+                      location: data['location'] ?? 'Unknown',
+                      imagePath: imagePath,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ItemViewScreen(
+                              itemName: data['title'] ?? '',
+                              description: data['description'] ?? '',
+                              category: data['category'] ?? '',
+                              contactInfo: data['contactInfo'] ?? '',
+                              location: data['location'] ?? '',
+                              imageUrls: List<String>.from(data['images'] ?? []),
+                              donorName: data['userName'] ?? 'Unknown Donor',
+                              donorImageUrl: data['userProfileImageUrl'] ?? '',
+                              uid: data['uid'] ?? '',
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
