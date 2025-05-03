@@ -4,6 +4,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'item_view_screen.dart';
+import 'dart:convert';
+import 'package:flutter/services.dart';
+import 'package:csv/csv.dart';
 
 // 🔼 Custom widget for each donation item card
 class DonationCard extends StatelessWidget {
@@ -106,24 +109,24 @@ class _HomeScreenState extends State<HomeScreen> {
   String selectedLocation = 'All';
   String selectedCategory = 'All';
 
+  // Locations for the cards
   final List<Map<String, dynamic>> locations = [
-    {'name': 'All', 'icon': Icons.public},
-    {'name': 'Shillong', 'icon': Icons.terrain}, // Example icon for Shillong
-    {'name': 'Guwahati', 'icon': Icons.water}, // Example icon for Guwahati
-    {'name': 'Delhi', 'icon': Icons.account_balance}, // Example icon for Delhi
-    {'name': 'Hyderabad', 'icon': Icons.fort}, // Charminar-like icon
-    {'name': 'Mumbai', 'icon': Icons.apartment}, // Example icon for Mumbai
-    {'name': 'Chennai', 'icon': Icons.beach_access}, // Example icon for Chennai
-    {'name': 'Kolkata', 'icon': Icons.tram}, // Example icon for Kolkata
-    {'name': 'Bangalore', 'icon': Icons.computer}, // Example icon for Bangalore
-    {'name': 'Pune', 'icon': Icons.school}, // Example icon for Pune
-    {'name': 'Jaipur', 'icon': Icons.festival}, // Example icon for Jaipur
-    {'name': 'Lucknow', 'icon': Icons.mosque}, // Example icon for Lucknow
-    {'name': 'Ahmedabad', 'icon': Icons.factory}, // Example icon for Ahmedabad
-    {'name': 'Others', 'icon': Icons.apartment}, // Example icon for Chandigarh
+    {'name': 'All', 'icon': Icons.public, 'state': ''},
+    {'name': 'Shillong', 'icon': Icons.terrain, 'state': 'Meghalaya'},
+    {'name': 'Guwahati', 'icon': Icons.water, 'state': 'Assam'},
+    {'name': 'Delhi', 'icon': Icons.account_balance, 'state': 'Delhi'},
+    {'name': 'Hyderabad', 'icon': Icons.fort, 'state': 'Telangana'},
+    {'name': 'Mumbai', 'icon': Icons.apartment, 'state': 'Maharashtra'},
+    {'name': 'Chennai', 'icon': Icons.beach_access, 'state': 'Tamil Nadu'},
+    {'name': 'Kolkata', 'icon': Icons.tram, 'state': 'West Bengal'},
+    {'name': 'Bangalore', 'icon': Icons.computer, 'state': 'Karnataka'},
+    {'name': 'Pune', 'icon': Icons.school, 'state': 'Maharashtra'},
+    {'name': 'Jaipur', 'icon': Icons.festival, 'state': 'Rajasthan'},
+    {'name': 'Lucknow', 'icon': Icons.mosque, 'state': 'Uttar Pradesh'},
+    {'name': 'Ahmedabad', 'icon': Icons.factory, 'state': 'Gujarat'},
+    {'name': 'Others', 'icon': Icons.apartment, 'state': ''},
   ];
-
-  final List<Map<String, dynamic>> categories = [
+    final List<Map<String, dynamic>> categories = [
     {'name': 'All', 'icon': Icons.all_inclusive},
     {'name': 'Electronics', 'icon': Icons.devices},
     {'name': 'Furniture', 'icon': Icons.chair},
@@ -136,6 +139,26 @@ class _HomeScreenState extends State<HomeScreen> {
     {'name': 'Sports Equipment', 'icon': Icons.sports_cricket},
     {'name': 'Others', 'icon': Icons.more_horiz},
   ];
+
+
+  List<String> cityNames = []; // List to store city names for autocomplete
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCities();
+  }
+
+  // Load cities from the CSV file for autocomplete
+  Future<void> _loadCities() async {
+    final String csvData = await rootBundle.loadString('assets/cities.csv');
+    final List<List<dynamic>> rows = const CsvToListConverter().convert(csvData);
+
+    // Extract city names from the CSV rows
+    setState(() {
+      cityNames = rows.skip(1).map((row) => row[0].toString().trim()).toList();
+    });
+  }
 
   // Function to get current location
   Future<void> _getCurrentLocation() async {
@@ -167,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // Add the fetched location to the locations list if it doesn't exist
           if (!locations.any((loc) => loc['name'] == city)) {
-            locations.add({'name': city, 'icon': Icons.location_city});
+            locations.add({'name': city, 'icon': Icons.location_city, 'state': ''});
           }
         });
       }
@@ -339,16 +362,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   if (textEditingValue.text.isEmpty) {
                                     return const Iterable<String>.empty();
                                   }
-                                  return locations
-                                      .map((loc) => loc['name'] as String)
-                                      .where((location) => location.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                                  return cityNames.where((city) =>
+                                      city.toLowerCase().contains(textEditingValue.text.toLowerCase()));
                                 },
                                 onSelected: (String selection) {
                                   setState(() {
                                     selectedLocation = selection;
                                   });
-                                  // Unfocus the text field after selection
-                                  FocusScope.of(context).unfocus();
+                                  FocusScope.of(context).unfocus(); // Unfocus the text field after selection
                                 },
                                 fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
                                   textEditingController.text = selectedLocation;

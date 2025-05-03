@@ -16,9 +16,14 @@ final Logger _logger = Logger();
 List<String> _cities = [];
 
 Future<void> _loadCities() async {
-  final rawData = await rootBundle.loadString('assets/cities.csv');
-  List<List<dynamic>> csvData = const CsvToListConverter().convert(rawData);
-  _cities = csvData.map((row) => row[0].toString()).toList();
+  try {
+    final rawData = await rootBundle.loadString('assets/cities.csv');
+    List<List<dynamic>> csvData = const CsvToListConverter().convert(rawData);
+    _cities = csvData.map((row) => row[0].toString()).toList();
+    _logger.i("Cities loaded successfully: ${_cities.length} cities.");
+  } catch (e) {
+    _logger.e("Error loading cities: $e");
+  }
 }
 
 class PostScreen extends StatefulWidget {
@@ -55,11 +60,16 @@ class _PostScreenState extends State<PostScreen> {
   ];
   double _uploadProgress = 0.0;
   bool _isUploading = false;
+  bool _isCitiesLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    _loadCities();
+    _loadCities().then((_) {
+      setState(() {
+        _isCitiesLoaded = true;
+      });
+    });
   }
 
   Future<void> _pickImages() async {
@@ -242,8 +252,8 @@ class _PostScreenState extends State<PostScreen> {
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [
-          Color(0xFF4CAF50), // Green
-          Color(0xFFC8E6C9), // Light Blue
+                Color(0xFF4CAF50), // Green
+                Color(0xFFC8E6C9), // Light Blue
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -313,28 +323,35 @@ class _PostScreenState extends State<PostScreen> {
                     value == null ? 'Please select a category' : null,
               ),
               const SizedBox(height: 20),
-              Autocomplete<String>(
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
-                    return const Iterable<String>.empty();
-                  }
-                  return _cities.where((city) => city.toLowerCase().contains(textEditingValue.text.toLowerCase()));
-                },
-                onSelected: (String selection) {
-                  _locationController.text = selection;
-                },
-                fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
-                  return TextFormField(
-                    controller: _locationController,
-                    focusNode: focusNode,
-                    decoration: const InputDecoration(
-                      labelText: 'Location',
-                      prefixIcon: Icon(Icons.location_on_outlined),
-                      border: OutlineInputBorder(),
-                    ),
-                  );
-                },
-              ),
+              _isCitiesLoaded
+                  ? Autocomplete<String>(
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.isEmpty) {
+                          return const Iterable<String>.empty();
+                        }
+                        return _cities.where((city) =>
+                            city.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                      },
+                      onSelected: (String selection) {
+                        _locationController.text = selection;
+                      },
+                      fieldViewBuilder: (BuildContext context,
+                          TextEditingController textEditingController,
+                          FocusNode focusNode,
+                          VoidCallback onFieldSubmitted) {
+                        textEditingController.text = _locationController.text;
+                        return TextFormField(
+                          controller: textEditingController,
+                          focusNode: focusNode,
+                          decoration: const InputDecoration(
+                            labelText: 'Location',
+                            prefixIcon: Icon(Icons.location_on_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                        );
+                      },
+                    )
+                  : const Center(child: CircularProgressIndicator()),
               const SizedBox(height: 10),
               Align(
                 alignment: Alignment.centerRight,
