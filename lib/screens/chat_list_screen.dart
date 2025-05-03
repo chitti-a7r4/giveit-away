@@ -47,7 +47,14 @@ class ChatListScreen extends StatelessWidget {
             return const Center(child: Text("No conversations yet."));
           }
 
-          return ListView.builder(
+          return GridView.builder(
+            padding: const EdgeInsets.all(10),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2, // Number of columns in the grid
+              crossAxisSpacing: 10, // Spacing between columns
+              mainAxisSpacing: 10, // Spacing between rows
+              childAspectRatio: 1, // Aspect ratio of each grid item
+            ),
             itemCount: chatDocs.length,
             itemBuilder: (context, index) {
               final chat = chatDocs[index];
@@ -66,77 +73,99 @@ class ChatListScreen extends StatelessWidget {
                   final name = userData['name'] ?? 'User';
                   final imageUrl = userData['imageUrl'] ?? '';
 
-                 return StreamBuilder<QuerySnapshot>(
-  stream: FirebaseFirestore.instance
-      .collection('chats/$chatId/messages')
-      .orderBy('timestamp', descending: true)
-      .limit(1)
-      .snapshots(),
-  builder: (context, messageSnapshot) {
-    String lastMessage = '';
-    String time = '';
-    bool isUnread = false;
+                  return StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('chats/$chatId/messages')
+                        .orderBy('timestamp', descending: true)
+                        .limit(1)
+                        .snapshots(),
+                    builder: (context, messageSnapshot) {
+                      String lastMessage = '';
+                      bool isUnread = false;
 
-    if (messageSnapshot.hasData && messageSnapshot.data!.docs.isNotEmpty) {
-      final lastMsg = messageSnapshot.data!.docs.first;
-      final data = lastMsg.data() as Map<String, dynamic>;
-      lastMessage = data['text'] ?? '';
-      final timestamp = data['timestamp'] as Timestamp?;
-      if (timestamp != null) {
-        final date = timestamp.toDate();
-        time = '${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-      }
+                      if (messageSnapshot.hasData && messageSnapshot.data!.docs.isNotEmpty) {
+                        final lastMsg = messageSnapshot.data!.docs.first;
+                        final data = lastMsg.data() as Map<String, dynamic>;
+                        lastMessage = data['text'] ?? '';
 
-      final seenBy = List<String>.from(data['seenBy'] ?? []);
-      isUnread = !seenBy.contains(currentUserId);
-    }
+                        final seenBy = List<String>.from(data['seenBy'] ?? []);
+                        isUnread = !seenBy.contains(currentUserId);
+                      }
 
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
-        child: imageUrl.isEmpty ? Text(name[0]) : null,
-      ),
-      title: Text(
-        name,
-        style: TextStyle(fontWeight: isUnread ? FontWeight.bold : FontWeight.normal),
-      ),
-      subtitle: Row(
-        children: [
-          Expanded(
-            child: Text(
-              lastMessage,
-              style: TextStyle(
-                fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-          if (isUnread)
-            const Padding(
-              padding: EdgeInsets.only(left: 8.0),
-              child: Icon(Icons.circle, size: 10, color: Colors.blue),
-            ),
-        ],
-      ),
-      trailing: Text(time, style: const TextStyle(color: Colors.grey)),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatScreen(
-              conversation: ChatConversation(
-                id: otherUserId,
-                name: name,
-                imageUrl: imageUrl,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  },
-)
-;
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatScreen(
+                                conversation: ChatConversation(
+                                  id: otherUserId,
+                                  name: name,
+                                  imageUrl: imageUrl,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [
+                                Color(0xFFFAFAFA), // Light grey
+                                Color(0xFFF5F5F5), // Slightly darker grey
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.15), // Slightly darker shadow
+                                blurRadius: 8, // Increased blur for a softer shadow
+                                offset: const Offset(0, 4), // Adjusted offset for a more natural look
+                              ),
+                            ],
+                            border: Border.all(
+                              color: Colors.grey.withOpacity(0.2), // Subtle border for better definition
+                              width: 1,
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(10),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircleAvatar(
+                                backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+                                child: imageUrl.isEmpty ? Text(name[0]) : null,
+                                radius: 30,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                name,
+                                style: TextStyle(
+                                  fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
+                                  fontSize: 16,
+                                ),
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                lastMessage,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
                 },
               );
             },

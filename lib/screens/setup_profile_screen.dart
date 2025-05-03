@@ -7,9 +7,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:newapp/main.dart';
 import 'package:image/image.dart' as img;
 
-
-
-
 class SetupProfileScreen extends StatefulWidget {
   const SetupProfileScreen({super.key});
 
@@ -22,31 +19,30 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
   File? _pickedImage;
   bool _isSaving = false;
 
-Future<void> _pickImage() async {
-  final picker = ImagePicker();
-  final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-  if (pickedFile == null) return;
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile == null) return;
 
-  final originalFile = File(pickedFile.path);
-  final imageBytes = await originalFile.readAsBytes();
-  final image = img.decodeImage(imageBytes);
+    final originalFile = File(pickedFile.path);
+    final imageBytes = await originalFile.readAsBytes();
+    final image = img.decodeImage(imageBytes);
 
-  if (image == null) return;
+    if (image == null) return;
 
-  // Resize if needed (optional)
-  final resized = img.copyResize(image, width: 512); // limit to 512px width
+    // Resize if needed (optional)
+    final resized = img.copyResize(image, width: 512); // limit to 512px width
 
-  // Encode the resized image to JPEG with lower quality
-  final compressedBytes = img.encodeJpg(resized, quality: 60);
+    // Encode the resized image to JPEG with lower quality
+    final compressedBytes = img.encodeJpg(resized, quality: 60);
 
-  final compressedFile = File('${pickedFile.path}_compressed.jpg')
-    ..writeAsBytesSync(compressedBytes);
+    final compressedFile = File('${pickedFile.path}_compressed.jpg')
+      ..writeAsBytesSync(compressedBytes);
 
-  setState(() {
-    _pickedImage = compressedFile;
-  });
-}
-
+    setState(() {
+      _pickedImage = compressedFile;
+    });
+  }
 
   Future<void> _saveProfile() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -75,53 +71,100 @@ Future<void> _pickImage() async {
       'imageUrl': imageUrl,
       'uid': user.uid,
       'email': user.email,
+      'createdAt': FieldValue.serverTimestamp(),
     });
 
     setState(() {
       _isSaving = false;
     });
 
-  Navigator.pushAndRemoveUntil(
-  context,
-  MaterialPageRoute(builder: (_) => const MainScreen()),
-  (route) => false,
-);
- // go to main screen
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const MainScreen()),
+      (route) => false,
+    );
+    // go to main screen
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Setup Profile")),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            GestureDetector(
-              onTap: _pickImage,
-              child: CircleAvatar(
-                radius: 50,
-                backgroundImage:
-                    _pickedImage != null ? FileImage(_pickedImage!) : null,
-                child: _pickedImage == null
-                    ? const Icon(Icons.camera_alt, size: 40)
-                    : null,
-              ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF6A11CB), Color(0xFF2575FC)], // Purple to Blue gradient
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  "Setup Your Profile",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    height: 1.3,
+                    color: Colors.white, // White text for better contrast
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 30),
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundImage:
+                        _pickedImage != null ? FileImage(_pickedImage!) : null,
+                    child: _pickedImage == null
+                        ? const Icon(Icons.camera_alt, size: 40, color: Colors.white70)
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Enter your name',
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    prefixIcon: const Icon(Icons.person_outline, color: Colors.white70),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.1),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  style: const TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: _isSaving ? null : _saveProfile,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _isSaving
+                        ? const CircularProgressIndicator(color: Colors.black)
+                        : const Text(
+                            "Save and Continue",
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: "Enter your name"),
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: _isSaving ? null : _saveProfile,
-              child: _isSaving
-                  ? const CircularProgressIndicator()
-                  : const Text("Save and Continue"),
-            ),
-          ],
+          ),
         ),
       ),
     );

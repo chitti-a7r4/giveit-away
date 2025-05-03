@@ -21,6 +21,7 @@ class ChatScreen extends StatefulWidget {
 
 class ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController(); // Add ScrollController
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -34,6 +35,11 @@ class ChatScreenState extends State<ChatScreen> {
     super.initState();
     currentUserId = _auth.currentUser!.uid;
     chatId = _getChatId(currentUserId, widget.conversation.id);
+
+    // Scroll to the bottom when the screen is opened
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToBottom();
+    });
   }
 
   String _getChatId(String user1, String user2) {
@@ -115,8 +121,15 @@ class ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+    }
+  }
+
   @override
   void dispose() {
+    _scrollController.dispose(); // Dispose the ScrollController
     _typingTimer?.cancel();
     _updateTyping(false);
     _controller.dispose();
@@ -217,7 +230,13 @@ class ChatScreenState extends State<ChatScreen> {
                 final docs = snapshot.data!.docs;
                 _markMessagesAsSeen(snapshot.data!);
 
+                // Scroll to the bottom when new messages arrive
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _scrollToBottom();
+                });
+
                 return ListView.builder(
+                  controller: _scrollController, // Attach ScrollController
                   padding: const EdgeInsets.all(10),
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
