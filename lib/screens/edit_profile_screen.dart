@@ -19,6 +19,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _imageUrl;
   bool _loading = true;
   File? _selectedImage;
+  bool _isUploading = false; // Add this variable to track upload state
 
   @override
   void initState() {
@@ -52,7 +53,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<String?> _uploadImageToFirebase(String userId) async {
     if (_selectedImage == null) return _imageUrl; // Use old image if no new image selected
-    final ref = FirebaseStorage.instance.ref().child('profile_images/$userId');
+    final ref = FirebaseStorage.instance.ref().child('profile_pics/$userId');
     await ref.putFile(_selectedImage!);
     return await ref.getDownloadURL();
   }
@@ -64,17 +65,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final newImageUrl = await _uploadImageToFirebase(user.uid);
-
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-      'name': _name,
-      'bio': _bio,
-      'imageUrl': newImageUrl,
+    setState(() {
+      _isUploading = true; // Show loading indicator
     });
 
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated!')));
-      Navigator.pop(context);
+    try {
+      final newImageUrl = await _uploadImageToFirebase(user.uid);
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+        'name': _name,
+        'bio': _bio,
+        'imageUrl': newImageUrl,
+      });
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated!')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isUploading = false; // Hide loading indicator
+      });
     }
   }
 
@@ -84,67 +101,83 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       appBar: AppBar(
         title: const Text("Edit Profile"),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: ListView(
-                  children: [
-                    GestureDetector(
-                      onTap: _pickImage,
-                      child: Stack(
-                        alignment: Alignment.center, // Center the icon
-                        children: [
-                          ClipOval(
-                            child: Container(
-                              width: 100, // Diameter of the circle
-                              height: 100,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                image: DecorationImage(
-                                  image: _selectedImage != null
-                                      ? FileImage(_selectedImage!)
-                                      : _imageUrl != null
-                                          ? NetworkImage(_imageUrl!) as ImageProvider
-                                          : const AssetImage('assets/profile_pic.png'),
-                                  fit: BoxFit.contain, // Ensures the image fits inside the circle
+      body: Stack(
+        children: [
+          _loading
+              ? const Center(child: CircularProgressIndicator())
+              : Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: ListView(
+                      children: [
+                        GestureDetector(
+                          onTap: _pickImage,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              ClipOval(
+                                child: Container(
+                                  width: 100,
+                                  height: 100,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    image: DecorationImage(
+                                      image: _selectedImage != null
+                                          ? FileImage(_selectedImage!)
+                                          : _imageUrl != null
+                                              ? NetworkImage(_imageUrl!) as ImageProvider
+                                              : const AssetImage('assets/profile_pic.png'),
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                              if (_selectedImage == null)
+                                const Icon(
+                                  Icons.add_a_photo,
+                                  size: 30,
+                                  color: Color.fromARGB(255, 255, 255, 255),
+                                ),
+                            ],
                           ),
-                          if (_selectedImage == null) // Show the icon only if no image is selected
-                            const Icon(
-                              Icons.add_a_photo,
-                              size: 30,
-                              color: Color.fromARGB(255, 255, 255, 255), // Adjust the color as needed
-                            ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                          initialValue: _name,
+                          decoration: const InputDecoration(labelText: 'Name'),
+                          onSaved: (value) => _name = value,
+                          validator: (value) =>
+                              value == null || value.isEmpty ? 'Enter your name' : null,
+                        ),
+                        const SizedBox(height: 10),
+                        TextFormField(
+                          initialValue: _bio,
+                          decoration: const InputDecoration(labelText: 'Bio'),
+                          onSaved: (value) => _bio = value,
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: _isUploading ? null : _saveChanges,
+                          child: _isUploading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : const Text("Save Changes"),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      initialValue: _name,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                      onSaved: (value) => _name = value,
-                      validator: (value) => value == null || value.isEmpty ? 'Enter your name' : null,
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      initialValue: _bio,
-                      decoration: const InputDecoration(labelText: 'Bio'),
-                      onSaved: (value) => _bio = value,
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _saveChanges,
-                      child: const Text("Save Changes"),
-                    ),
-                  ],
+                  ),
                 ),
+          if (_isUploading)
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: CircularProgressIndicator(),
               ),
             ),
+        ],
+      ),
     );
   }
 }

@@ -4,9 +4,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'item_view_screen.dart';
-import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:csv/csv.dart';
+
 
 // 🔼 Custom widget for each donation item card
 class DonationCard extends StatelessWidget {
@@ -141,24 +141,29 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
 
-  List<String> cityNames = []; // List to store city names for autocomplete
+  List<String> cityNames = []; // List to store city names
+  List<String> stateNames = []; // List to store state names
 
   @override
   void initState() {
     super.initState();
-    _loadCities();
+    _loadCitiesAndStates(); // Load both cities and states
   }
 
-  // Load cities from the CSV file for autocomplete
-  Future<void> _loadCities() async {
+  // Load cities and states from the CSV file
+  Future<void> _loadCitiesAndStates() async {
     final String csvData = await rootBundle.loadString('assets/cities.csv');
     final List<List<dynamic>> rows = const CsvToListConverter().convert(csvData);
 
-    // Extract city names from the CSV rows
     setState(() {
+      // Extract city names and state names
       cityNames = rows.skip(1).map((row) => row[0].toString().trim()).toList();
+      stateNames = rows.skip(1).map((row) => row[5].toString().trim()).toSet().toList(); // Unique states
     });
   }
+
+  // Combine cities and states for the Autocomplete widget
+  List<String> get combinedLocations => [...cityNames, ...stateNames];
 
   // Function to get current location
   Future<void> _getCurrentLocation() async {
@@ -176,8 +181,10 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
+    // **UPDATED:** Replacing desiredAccuracy with settings
     Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
+       desiredAccuracy: LocationAccuracy.high, // Set desired accuracy
+    );
 
     List<Placemark> placemarks =
         await placemarkFromCoordinates(position.latitude, position.longitude);
@@ -214,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         title: const Text(
-          'giveIT-away',
+          'GiveIT-away',
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -351,7 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       // Location Autocomplete and Locator Button
                       SizedBox(
-                        width: 193,
+                        width: 193, // Adjust width as needed
                         child: Row(
                           children: [
                             const Icon(Icons.location_on, size: 18),
@@ -362,8 +369,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   if (textEditingValue.text.isEmpty) {
                                     return const Iterable<String>.empty();
                                   }
-                                  return cityNames.where((city) =>
-                                      city.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                                  return combinedLocations.where((location) =>
+                                      location.toLowerCase().contains(textEditingValue.text.toLowerCase()));
                                 },
                                 onSelected: (String selection) {
                                   setState(() {
@@ -372,13 +379,24 @@ class _HomeScreenState extends State<HomeScreen> {
                                   FocusScope.of(context).unfocus(); // Unfocus the text field after selection
                                 },
                                 fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
-                                  textEditingController.text = selectedLocation;
+                                  // Set the initial text in the field to the currently selected location
+                                  if (textEditingController.text.isEmpty || textEditingController.text != selectedLocation) {
+                                     textEditingController.text = selectedLocation;
+                                  }
                                   return TextFormField(
                                     controller: textEditingController,
                                     focusNode: focusNode,
+                                     onFieldSubmitted: (String value) {
+                                      // Optional: Update selectedLocation when user submits via keyboard
+                                       setState(() {
+                                         selectedLocation = value;
+                                       });
+                                     },
                                     decoration: const InputDecoration(
                                       labelText: 'Search Location',
                                       border: OutlineInputBorder(),
+                                       isDense: true, // Compact the input field
+                                       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 15), // Adjust padding
                                     ),
                                   );
                                 },
@@ -396,7 +414,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       // Category Dropdown
                       SizedBox(
-                        width: 180,
+                        width: 180, // Adjust width as needed
                         child: Row(
                           children: [
                             const Icon(Icons.category, size: 18),
@@ -424,13 +442,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                             cat['name'] as String,
                                             style: const TextStyle(fontSize: 14),
                                             softWrap: true,
-                                            overflow: TextOverflow.visible,
+                                            overflow: TextOverflow.visible, // Allow text to wrap or overflow
                                           ),
                                         ),
                                       ],
                                     ),
                                   );
                                 }).toList(),
+                                 underline: Container(), // Remove default underline
+                                 icon: const Icon(Icons.arrow_drop_down), // Custom dropdown icon
                               ),
                             ),
                           ],
@@ -466,8 +486,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   final location = data['location'] ?? '';
                   final category = data['category'] ?? '';
 
-                  bool locationMatch = selectedLocation == 'All' || location.toString().toLowerCase().startsWith(selectedLocation.toLowerCase());
-                  bool categoryMatch = selectedCategory == 'All' || category.toString().toLowerCase().startsWith(selectedCategory.toLowerCase());
+                  // Extract city and state from the location field
+                  final city = location.split(',').first.trim(); // Assuming "City, State" format
+                  final state = location.split(',').length > 1
+                      ? location.split(',')[1].trim()
+                      : '';
+
+                  // Match selectedLocation with either city or state
+                  bool locationMatch = selectedLocation == 'All' ||
+                      city.toLowerCase().startsWith(selectedLocation.toLowerCase()) ||
+                      state.toLowerCase().startsWith(selectedLocation.toLowerCase());
+
+                  bool categoryMatch = selectedCategory == 'All' ||
+                      category.toString().toLowerCase().startsWith(selectedCategory.toLowerCase());
 
                   return locationMatch && categoryMatch;
                 }).toList();
@@ -477,8 +508,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
 
                 return GridView.builder(
-                  shrinkWrap: true, // Ensures the GridView doesn't take infinite height
-                  physics: const NeverScrollableScrollPhysics(), // Prevents nested scrolling issues
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     crossAxisSpacing: 10,

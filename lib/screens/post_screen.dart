@@ -10,6 +10,7 @@ import 'package:image/image.dart' as img;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:csv/csv.dart';
+import 'package:reorderables/reorderables.dart';
 
 final Logger _logger = Logger();
 
@@ -40,9 +41,7 @@ class _PostScreenState extends State<PostScreen> {
   final TextEditingController _locationController = TextEditingController();
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  File? _selectedImage1;
-  File? _selectedImage2;
-  File? _selectedImage3;
+  final List<File> _selectedImages = []; // Replace individual image variables with a list
   final picker = ImagePicker();
 
   String? _category;
@@ -74,11 +73,14 @@ class _PostScreenState extends State<PostScreen> {
 
   Future<void> _pickImages() async {
     final pickedFiles = await picker.pickMultiImage();
-    setState(() {
-      if (pickedFiles.isNotEmpty) _selectedImage1 = File(pickedFiles[0].path);
-      if (pickedFiles.length > 1) _selectedImage2 = File(pickedFiles[1].path);
-      if (pickedFiles.length > 2) _selectedImage3 = File(pickedFiles[2].path);
-    });
+    if (pickedFiles.isNotEmpty) {
+      setState(() {
+        // Append new images to the existing list, ensuring the limit is not exceeded
+        final newImages = pickedFiles.map((file) => File(file.path)).toList();
+        final remainingSlots = 3 - _selectedImages.length;
+        _selectedImages.addAll(newImages.take(remainingSlots));
+      });
+    }
   }
 
   Future<File?> _compressImage(File image) async {
@@ -182,7 +184,7 @@ class _PostScreenState extends State<PostScreen> {
         return;
       }
 
-      if (_selectedImage1 == null && _selectedImage2 == null && _selectedImage3 == null) {
+      if (_selectedImages.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Please select at least one image.")),
         );
@@ -196,17 +198,9 @@ class _PostScreenState extends State<PostScreen> {
       String profileImageUrl = userDoc['imageUrl'] ?? '';
 
       List<String> imageUrls = [];
-      if (_selectedImage1 != null) {
-        String? imageUrl1 = await _uploadImage(_selectedImage1!);
-        if (imageUrl1 != null) imageUrls.add(imageUrl1);
-      }
-      if (_selectedImage2 != null) {
-        String? imageUrl2 = await _uploadImage(_selectedImage2!);
-        if (imageUrl2 != null) imageUrls.add(imageUrl2);
-      }
-      if (_selectedImage3 != null) {
-        String? imageUrl3 = await _uploadImage(_selectedImage3!);
-        if (imageUrl3 != null) imageUrls.add(imageUrl3);
+      for (File image in _selectedImages) {
+        String? imageUrl = await _uploadImage(image);
+        if (imageUrl != null) imageUrls.add(imageUrl);
       }
 
       try {
@@ -231,9 +225,7 @@ class _PostScreenState extends State<PostScreen> {
         _locationController.clear();
         setState(() {
           _category = null;
-          _selectedImage1 = null;
-          _selectedImage2 = null;
-          _selectedImage3 = null;
+          _selectedImages.clear();
         });
       } catch (e) {
         _logger.e("Error saving post to Firestore: $e");
@@ -242,6 +234,128 @@ class _PostScreenState extends State<PostScreen> {
         );
       }
     }
+  }
+
+  Widget _buildImageGrid() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(bottom: 8.0),
+          child: Text(
+            "Upload Images",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+        ),
+        if (_selectedImages.isNotEmpty)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8.0),
+            child: Text(
+              "Drag to rearrange (First image will be the cover photo)",
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+          ),
+        Container(
+          padding: const EdgeInsets.all(8.0),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.grey[200],
+          ),
+          child: ReorderableWrap(
+            spacing: 8.0,
+            runSpacing: 8.0,
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                if (newIndex > oldIndex) newIndex -= 1;
+                final image = _selectedImages.removeAt(oldIndex);
+                _selectedImages.insert(newIndex, image);
+              });
+            },
+            children: [
+              ..._selectedImages.map((image) {
+                final isCoverPhoto = _selectedImages.indexOf(image) == 0;
+                return Stack(
+                  key: ValueKey(image),
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        image,
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    if (isCoverPhoto)
+                      Positioned(
+                        bottom: 4,
+                        left: 4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            "Cover",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedImages.remove(image);
+                          });
+                        },
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.red,
+                          ),
+                          child: const Icon(Icons.close, size: 20, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }),
+              if (_selectedImages.length < 3)
+                GestureDetector(
+                  onTap: _pickImages,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.white,
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.add, size: 40, color: Colors.grey),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -362,37 +476,7 @@ class _PostScreenState extends State<PostScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              GestureDetector(
-                onTap: _pickImages,
-                child: Container(
-                  width: double.infinity,
-                  height: 180,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.grey[200],
-                  ),
-                  child: _selectedImage1 == null &&
-                          _selectedImage2 == null &&
-                          _selectedImage3 == null
-                      ? const Center(child: Text("Tap to select images"))
-                      : GridView(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 8.0,
-                            mainAxisSpacing: 8.0,
-                          ),
-                          children: [
-                            if (_selectedImage1 != null)
-                              Image.file(_selectedImage1!, fit: BoxFit.cover),
-                            if (_selectedImage2 != null)
-                              Image.file(_selectedImage2!, fit: BoxFit.cover),
-                            if (_selectedImage3 != null)
-                              Image.file(_selectedImage3!, fit: BoxFit.cover),
-                          ],
-                        ),
-                ),
-              ),
+              _buildImageGrid(),
               const SizedBox(height: 30),
               if (_isUploading)
                 Padding(
