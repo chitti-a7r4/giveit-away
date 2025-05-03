@@ -19,7 +19,7 @@ Future<void> _loadCities() async {
   try {
     final rawData = await rootBundle.loadString('assets/cities.csv');
     List<List<dynamic>> csvData = const CsvToListConverter().convert(rawData);
-    _cities = csvData.map((row) => row[0].toString()).toList();
+    _cities = csvData.map((row) => "${row[0]}, ${row[5]}, ${row[3]}").toList(); // City, State, Country
     _logger.i("Cities loaded successfully: ${_cities.length} cities.");
   } catch (e) {
     _logger.e("Error loading cities: $e");
