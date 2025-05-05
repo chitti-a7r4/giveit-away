@@ -47,14 +47,8 @@ class ChatListScreen extends StatelessWidget {
             return const Center(child: Text("No conversations yet."));
           }
 
-          return GridView.builder(
+          return ListView.builder(
             padding: const EdgeInsets.all(10),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2, // Number of columns in the grid
-              crossAxisSpacing: 10, // Spacing between columns
-              mainAxisSpacing: 10, // Spacing between rows
-              childAspectRatio: 1, // Aspect ratio of each grid item
-            ),
             itemCount: chatDocs.length,
             itemBuilder: (context, index) {
               final chat = chatDocs[index];
@@ -65,8 +59,8 @@ class ChatListScreen extends StatelessWidget {
               return FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance.collection('users').doc(otherUserId).get(),
                 builder: (context, userSnapshot) {
-                  if (!userSnapshot.hasData) {
-                    return const SizedBox.shrink();
+                  if (!userSnapshot.hasData || userSnapshot.data!.data() == null) {
+                    return const SizedBox.shrink(); // Return an empty widget if data is null
                   }
 
                   final userData = userSnapshot.data!.data() as Map<String, dynamic>;
@@ -108,6 +102,7 @@ class ChatListScreen extends StatelessWidget {
                           );
                         },
                         child: Container(
+                          margin: const EdgeInsets.only(bottom: 10),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [
@@ -131,34 +126,39 @@ class ChatListScreen extends StatelessWidget {
                             ),
                           ),
                           padding: const EdgeInsets.all(10),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          child: Row(
                             children: [
                               CircleAvatar(
                                 backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
-                                child: imageUrl.isEmpty ? Text(name[0]) : null,
                                 radius: 30,
+                                child: imageUrl.isEmpty ? Text(name[0]) : null,
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                name,
-                                style: TextStyle(
-                                  fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
-                                  fontSize: 16,
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      name,
+                                      style: TextStyle(
+                                        fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
+                                        fontSize: 16,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      lastMessage,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                  ],
                                 ),
-                                textAlign: TextAlign.center,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                lastMessage,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                                textAlign: TextAlign.center,
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
                               ),
                             ],
                           ),

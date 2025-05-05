@@ -5,6 +5,7 @@ import 'full_screen_image_view.dart';
 import 'chat_coversation.dart';
 import 'chat_screen.dart';
 import 'other_user_profile_screen.dart';
+import 'home_screen.dart'; // Import the HomeScreen class
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ItemViewScreen extends StatefulWidget {
@@ -185,15 +186,42 @@ class _ItemViewScreenState extends State<ItemViewScreen> {
                               spacing: 10,
                               runSpacing: 8,
                               children: [
-                                Chip(
-                                  avatar: const Icon(Icons.category, size: 18),
-                                  label: Text(widget.category),
-                                  backgroundColor: Colors.blue.shade50,
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => HomeScreen(
+                                          selectedCategory: widget.category,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Chip(
+                                    avatar: const Icon(Icons.category, size: 18),
+                                    label: Text(widget.category),
+                                    backgroundColor: Colors.blue.shade50,
+                                  ),
                                 ),
-                                Chip(
-                                  avatar: const Icon(Icons.location_on, size: 18),
-                                  label: Text(widget.location),
-                                  backgroundColor: Colors.green.shade50,
+                                GestureDetector(
+                                  onTap: () {
+                                    // Extract the city name from the location (assuming "City, State" format)
+                                    final cityName = widget.location.split(',').first.trim();
+
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => HomeScreen(
+                                          selectedLocation: cityName, // Pass only the city name
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Chip(
+                                    avatar: const Icon(Icons.location_on, size: 18),
+                                    label: Text(widget.location),
+                                    backgroundColor: Colors.green.shade50,
+                                  ),
                                 ),
                               ],
                             ),

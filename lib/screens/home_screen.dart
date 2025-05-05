@@ -99,15 +99,24 @@ class DonationCard extends StatelessWidget {
 }
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final String? selectedCategory;
+  final String? selectedLocation;
+
+  const HomeScreen({
+    super.key,
+    this.selectedCategory,
+    this.selectedLocation,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String selectedLocation = 'All';
-  String selectedCategory = 'All';
+  late String selectedCategory;
+  late String selectedLocation;
+
+  // This duplicate initState method is removed to resolve the error.
 
   // Locations for the cards
   final List<Map<String, dynamic>> locations = [
@@ -144,12 +153,17 @@ class _HomeScreenState extends State<HomeScreen> {
   List<String> cityNames = []; // List to store city names
   List<String> stateNames = []; // List to store state names
 
-  @override
-  void initState() {
-    super.initState();
-    _loadCitiesAndStates(); // Load both cities and states
-  }
+@override
+void initState() {
+  super.initState();
 
+  // Initialize selectedCategory and selectedLocation with passed values or defaults
+  selectedCategory = widget.selectedCategory ?? 'All';
+  selectedLocation = widget.selectedLocation ?? 'All';
+
+  // Load both cities and states
+  _loadCitiesAndStates();
+}
   // Load cities and states from the CSV file
   Future<void> _loadCitiesAndStates() async {
     final String csvData = await rootBundle.loadString('assets/cities.csv');
@@ -310,7 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Card(
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             elevation: 4,
-                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 5), // Added vertical margin
                             child: Container(
                               width: 100,
                               padding: const EdgeInsets.all(8),
