@@ -71,7 +71,24 @@ class ProfileScreen extends StatelessWidget {
                 onTap: () async {
                   Navigator.pop(context);
                   await FirebaseAuth.instance.signOut();
-                  Navigator.pushReplacementNamed(context, '/login');
+
+                  // Show dialog to prompt the user to restart the app
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Restart Recommended'),
+                      content: const Text('Please restart the app for better experience.'),
+                      actions: [
+                        TextButton(
+                          child: const Text('OK'),
+                          onPressed: () {
+                            Navigator.of(ctx).pop();
+                            Navigator.pushReplacementNamed(context, '/login');
+                          },
+                        ),
+                      ],
+                    ),
+                  );
                 },
               ),
             ],

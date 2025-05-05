@@ -211,7 +211,26 @@ class _LoginScreenState extends State<LoginScreen> {
                                   email: _emailController.text.trim(),
                                   password: _passwordController.text.trim(),
                                 );
-                                widget.onLoginSuccess();
+
+                                // Navigate to the home screen
+                                final result = await Navigator.pushReplacementNamed(context, '/home');
+
+                                // Show a dialog if navigation to the home screen fails
+                                if (result == null) {
+                                  showDialog(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Text('Navigation Error'),
+                                      content: const Text('Unable to navigate to the home screen. Please restart the app.'),
+                                      actions: [
+                                        TextButton(
+                                          child: const Text('OK'),
+                                          onPressed: () => Navigator.of(ctx).pop(),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
                               } on FirebaseAuthException catch (e) {
                                 String message = "Login failed. Please try again.";
                                 if (e.code == 'user-not-found') {
