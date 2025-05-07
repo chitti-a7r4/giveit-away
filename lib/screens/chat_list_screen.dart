@@ -44,7 +44,7 @@ class ChatListScreen extends StatelessWidget {
           final chatDocs = chatSnapshot.data!.docs;
 
           if (chatDocs.isEmpty) {
-            return const Center(child: Text("No conversations yet."));
+            return const Center(child: Text("No conversations yet, Go start one!"));
           }
 
           return ListView.builder(
@@ -128,10 +128,27 @@ class ChatListScreen extends StatelessWidget {
                           padding: const EdgeInsets.all(10),
                           child: Row(
                             children: [
-                              CircleAvatar(
-                                backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
-                                radius: 30,
-                                child: imageUrl.isEmpty ? Text(name[0]) : null,
+                              Stack(
+                                children: [
+                                  CircleAvatar(
+                                    backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+                                    radius: 30,
+                                    child: imageUrl.isEmpty ? Text(name[0]) : null,
+                                  ),
+                                  if (isUnread) // Show notification dot if there are unread messages
+                                    Positioned(
+                                      right: 0,
+                                      top: 0,
+                                      child: Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                               const SizedBox(width: 10),
                               Expanded(

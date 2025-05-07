@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'item_view_screen.dart';
 
 class OtherUserProfileScreen extends StatelessWidget {
   final String userId;
@@ -136,34 +137,46 @@ class OtherUserProfileScreen extends StatelessWidget {
 
                               final posts = snapshot.data!.docs;
 
-                              return ListView.builder(
+                              return GridView.builder(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 10,
+                                  mainAxisSpacing: 10,
+                                  childAspectRatio: 0.8,
+                                ),
                                 itemCount: posts.length,
                                 itemBuilder: (context, index) {
                                   final post = posts[index];
-                                  return Card(
-                                    margin: const EdgeInsets.symmetric(vertical: 8),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: ListTile(
-                                      contentPadding: const EdgeInsets.all(12),
-                                      leading: Image(
-                                        image: post['images'].isNotEmpty
-                                            ? NetworkImage(post['images'][0])
-                                            : const AssetImage('assets/profile_pic.png') as ImageProvider,
-                                        width: 50,
-                                        height: 50,
-                                        fit: BoxFit.cover,
-                                      ),
-                                      title: Text(
-                                        post['title'],
-                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                      ),
-                                      subtitle: Text(
-                                        '${post['category']}\n${post['location']}',
-                                        style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                                      ),
-                                    ),
+                                  final data = post.data() as Map<String, dynamic>;
+
+                                  final imagePath = data['images'] != null && data['images'].isNotEmpty
+                                      ? data['images'][0]
+                                      : '';
+
+                                  return DonationCard(
+                                    title: data['title'] ?? 'No Title',
+                                    category: data['category'] ?? 'Unknown',
+                                    location: data['location'] ?? 'Unknown',
+                                    imagePath: imagePath,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => ItemViewScreen(
+                                            itemName: data['title'] ?? '',
+                                            description: data['description'] ?? '',
+                                            category: data['category'] ?? '',
+                                            contactInfo: data['contactInfo'] ?? '',
+                                            location: data['location'] ?? '',
+                                            imageUrls: List<String>.from(data['images'] ?? []),
+                                            donorName: userData['name'] ?? 'Unknown Donor',
+                                            donorImageUrl: userData['imageUrl'] ?? '',
+                                            uid: data['uid'] ?? '',
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   );
                                 },
                               );
@@ -174,6 +187,75 @@ class OtherUserProfileScreen extends StatelessWidget {
                     ),
                   );
                 },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class DonationCard extends StatelessWidget {
+  final String title;
+  final String category;
+  final String location;
+  final String imagePath;
+  final VoidCallback onTap;
+
+  const DonationCard({
+    Key? key,
+    required this.title,
+    required this.category,
+    required this.location,
+    required this.imagePath,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                child: Image(
+                  image: imagePath.isNotEmpty
+                      ? NetworkImage(imagePath)
+                      : const AssetImage('assets/profile_pic.png') as ImageProvider,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    category,
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    location,
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                ],
               ),
             ),
           ],
