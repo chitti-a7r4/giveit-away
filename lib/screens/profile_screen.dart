@@ -55,14 +55,60 @@ class ProfileScreen extends StatelessWidget {
                 leading: const Icon(Icons.help_outline),
                 title: const Text('Help & Support'),
                 onTap: () async {
-                  const url = 'https://wa.me/917287025149?text=Hello%20I%20need%20help%20with%20my%20account';
-                  if (await canLaunchUrl(Uri.parse(url))) {
-                    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Could not open WhatsApp')),
-                    );
-                  }
+                  showModalBottomSheet(
+                    context: context,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    builder: (_) {
+                      return Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Wrap(
+                          runSpacing: 15,
+                          children: [
+                            const Center(
+                              child: Text(
+                                'Contact Us',
+                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.phone_android),
+                              title: const Text('WhatsApp'),
+                              onTap: () async {
+                                const url = 'https://wa.me/917287025149?text=Hello%20I%20need%20help%20with%20my%20account';
+                                if (await canLaunchUrl(Uri.parse(url))) {
+                                  await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Could not open WhatsApp')),
+                                  );
+                                }
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.email),
+                              title: const Text('Email'),
+                              onTap: () async {
+                                final email = Uri(
+                                  scheme: 'mailto',
+                                  path: 'shivasainaluvala@gmail.com',
+                                  query: 'subject=Help%20Request&body=Hello,%20I%20need%20help%20with%20my%20account.',
+                                );
+                                if (await canLaunchUrl(email)) {
+                                  await launchUrl(email);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Could not open email client')),
+                                  );
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
                 },
               ),
               ListTile(

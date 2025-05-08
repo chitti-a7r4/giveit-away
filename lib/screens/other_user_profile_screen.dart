@@ -204,13 +204,13 @@ class DonationCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const DonationCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.category,
     required this.location,
     required this.imagePath,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
