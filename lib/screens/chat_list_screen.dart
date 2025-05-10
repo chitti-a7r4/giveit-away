@@ -35,8 +35,18 @@ class ChatListScreen extends StatelessWidget {
         stream: FirebaseFirestore.instance
             .collection('chats')
             .where('participants', arrayContains: currentUserId)
+            .orderBy('lastUpdated', descending: true)
             .snapshots(),
         builder: (context, chatSnapshot) {
+          if (chatSnapshot.hasError) {
+            return Center(
+              child: Text(
+                'Please wait while we set up the chat list...',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            );
+          }
+
           if (!chatSnapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
