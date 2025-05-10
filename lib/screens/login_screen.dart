@@ -139,6 +139,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 8), // Add small spacing
+                const Text(
+                  "Dedicated to my Amma, Anna and Daddy\nfor giving me everything ❤️",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontStyle: FontStyle.italic,
+                    height: 1.3,
+                    color: Colors.white70,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 30),
                 Form(
                   key: _formKey,
