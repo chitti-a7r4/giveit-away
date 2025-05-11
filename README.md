@@ -77,14 +77,6 @@ To reduce waste and foster a sharing community by connecting people who want to 
   - Custom Cards
   - Material Design
 
-## 🚀 Getting Started
-
-### Prerequisites
-- Flutter (latest version)
-- Firebase account
-- Android Studio or VS Code
-- Git
-
 ### Installation
 
 - In the release section
