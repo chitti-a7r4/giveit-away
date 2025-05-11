@@ -48,28 +48,6 @@ To reduce waste and foster a sharing community by connecting people who want to 
 
 ## 📱 Screenshots
 
-  <a href="https://ibb.co/zWj3R5Dc">
-    <img src="https://ibb.co/zWj3R5Dc" />
-  </a>
-  <a href="https://ibb.co/s9sxsYSP">
-    <img src="https://ibb.co/s9sxsYSP" />
-  </a>
-  <a href="https://ibb.co/wFvfwnz8">
-    <img src="https://ibb.co/wFvfwnz8" />
-  </a>
-  <a href="https://ibb.co/RGNZrcsk">
-    <img src="https://ibb.co/RGNZrcsk" />
-  </a>
-  <a href="https://ibb.co/XrFxj7ck">
-    <img src="https://ibb.co/XrFxj7ck" />
-  </a>
-  <a href="https://ibb.co/TxdP02SK">
-    <img src="https://ibb.co/TxdP02SK" />
-  </a>
-  <a href="https://ibb.co/9kdvw3vr">
-    <img src="https://ibb.co/9kdvw3vr" />
-  </a>
-
 
 ## 🛠️ Technical Stack
 
