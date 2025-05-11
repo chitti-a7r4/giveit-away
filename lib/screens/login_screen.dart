@@ -87,27 +87,32 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
-      // Check if email exists in Firestore
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: email)
-          .limit(1)
-          .get();
-
-      if (querySnapshot.docs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No user found with this email.')),
-        );
-        return;
-      }
-
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password reset email sent. Check your inbox.')),
+        const SnackBar(
+          content: Text('Password reset email sent. Please check your inbox.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message = 'An error occurred while resetting password.';
+      if (e.code == 'user-not-found') {
+        message = 'No user found with this email address.';
+      } else if (e.code == 'invalid-email') {
+        message = 'Please enter a valid email address.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Something went wrong. Please try again.')),
+        const SnackBar(
+          content: Text('Something went wrong. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -222,26 +227,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                   email: _emailController.text.trim(),
                                   password: _passwordController.text.trim(),
                                 );
-
-                                // Navigate to the home screen
-                                final result = await Navigator.pushReplacementNamed(context, '/home');
-
-                                // Show a dialog if navigation to the home screen fails
-                                if (result == null) {
-                                  showDialog(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      title: const Text('Navigation Error'),
-                                      content: const Text('Unable to navigate to the home screen. Please restart the app.'),
-                                      actions: [
-                                        TextButton(
-                                          child: const Text('OK'),
-                                          onPressed: () => Navigator.of(ctx).pop(),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }
+                                
+                                // Call the onLoginSuccess callback instead of navigation
+                                widget.onLoginSuccess();
+                                
                               } on FirebaseAuthException catch (e) {
                                 String message = "Login failed. Please try again.";
                                 if (e.code == 'user-not-found') {
