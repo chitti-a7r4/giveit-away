@@ -55,7 +55,6 @@ To reduce waste and foster a sharing community by connecting people who want to 
 <img src="https://github.com/user-attachments/assets/c24dde70-5fe5-4023-8393-d95d8970fa7b" width="300" />
 <img src="https://github.com/user-attachments/assets/384881b0-52eb-4ade-b88a-5340c96b8747" width="300" />
 <img src="https://github.com/user-attachments/assets/711ba2a8-7ba3-4385-af8f-8714e283c3dd" width="300" />
-<img src="https://github.com/user-attachments/assets/2afc90d8-911f-4143-bfb9-a6e811a79ebb" width="300" />
 
 
 
