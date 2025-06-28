@@ -201,6 +201,8 @@ class ProfileScreen extends StatelessWidget {
                   final createdAt = userData['createdAt'] as Timestamp?;
                   final user = FirebaseAuth.instance.currentUser;
 
+                  print('Profile pic URL: $profilePic');
+
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(

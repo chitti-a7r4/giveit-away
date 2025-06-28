@@ -13,6 +13,7 @@ import 'screens/post_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/chat_list_screen.dart';
 import 'screens/login_screen.dart';
+import 'package:newapp/widgets/web_mobile_frame.dart'; // Add this import
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -88,21 +89,18 @@ class AuthGate extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        } else if (snapshot.hasData) {
-          return const MainScreen();
-        } else {
-          return LoginScreen(
-            onLoginSuccess: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const MainScreen()),
-              );
-            },
-          );
+          return const Center(child: CircularProgressIndicator());
         }
+        if (snapshot.hasData) {
+          // Wrap MainScreen with WebMobileFrame
+          return WebMobileFrame(child: MainScreen());
+        }
+        return LoginScreen(
+          onLoginSuccess: () {
+            // After login, rebuild to show MainScreen in WebMobileFrame
+            (context as Element).reassemble();
+          },
+        );
       },
     );
   }
