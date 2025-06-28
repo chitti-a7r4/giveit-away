@@ -6,6 +6,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'item_view_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:csv/csv.dart';
+import 'package:newapp/widgets/web_mobile_frame.dart';
 
 
 // 🔼 Custom widget for each donation item card
@@ -548,7 +549,7 @@ void initState() {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => ItemViewScreen(
+                            builder: (_) => WebMobileFrame(child: ItemViewScreen(
                               itemName: data['title'] ?? '',
                               description: data['description'] ?? '',
                               category: data['category'] ?? '',
@@ -559,7 +560,7 @@ void initState() {
                               donorImageUrl: data['userProfileImageUrl'] ?? '',
                               uid: data['uid'] ?? '',
                             ),
-                          ),
+                          ),)
                         );
                       },
                     );

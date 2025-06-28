@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'item_view_screen.dart';
+import 'package:newapp/widgets/web_mobile_frame.dart';
+
 
 class OtherUserProfileScreen extends StatelessWidget {
   final String userId;
@@ -163,7 +165,7 @@ class OtherUserProfileScreen extends StatelessWidget {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => ItemViewScreen(
+                                          builder: (_) => WebMobileFrame(child: ItemViewScreen(
                                             itemName: data['title'] ?? '',
                                             description: data['description'] ?? '',
                                             category: data['category'] ?? '',
@@ -174,7 +176,7 @@ class OtherUserProfileScreen extends StatelessWidget {
                                             donorImageUrl: userData['imageUrl'] ?? '',
                                             uid: data['uid'] ?? '',
                                           ),
-                                        ),
+                                        ),)
                                       );
                                     },
                                   );

@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'chat_coversation.dart';
 import 'chat_screen.dart';
+import 'package:newapp/widgets/web_mobile_frame.dart';
 
 class ChatListScreen extends StatelessWidget {
   ChatListScreen({super.key});
@@ -101,14 +102,14 @@ class ChatListScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ChatScreen(
+                              builder: (_) => WebMobileFrame(child: ChatScreen(
                                 conversation: ChatConversation(
                                   id: otherUserId,
                                   name: name,
                                   imageUrl: imageUrl,
                                 ),
                               ),
-                            ),
+                            ),)
                           );
                         },
                         child: Container(

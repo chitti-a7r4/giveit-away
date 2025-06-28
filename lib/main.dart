@@ -55,7 +55,26 @@ class GiveItAwayApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const AuthGate(),
+      home: Center(
+        child: Container(
+          width: 420, // Set your desired mobile width
+          constraints: const BoxConstraints(
+            maxHeight: 900, // Optional: limit height
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 20,
+                spreadRadius: 5,
+              ),
+            ],
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const AuthGate(),
+        ),
+      ),
     );
   }
 }

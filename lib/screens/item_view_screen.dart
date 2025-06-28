@@ -7,6 +7,8 @@ import 'chat_screen.dart';
 import 'other_user_profile_screen.dart';
 import 'home_screen.dart'; // Import the HomeScreen class
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:newapp/widgets/web_mobile_frame.dart';
+
 
 class ItemViewScreen extends StatefulWidget {
   final String itemName;
@@ -132,11 +134,11 @@ class _ItemViewScreenState extends State<ItemViewScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => FullScreenImageViewer(
+                                 builder: (_) => WebMobileFrame(child: FullScreenImageViewer(
                                     imageUrls: widget.imageUrls,
                                     initialIndex: widget.imageUrls.indexOf(url),
                                   ),
-                                ),
+                                ),)
                               );
                             },
                             child: Container(
@@ -195,9 +197,9 @@ class _ItemViewScreenState extends State<ItemViewScreen> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => HomeScreen(
+                                        builder: (_) => WebMobileFrame(child: HomeScreen(
                                           selectedCategory: widget.category,
-                                        ),
+                                        ),)
                                       ),
                                     );
                                   },
@@ -215,10 +217,10 @@ class _ItemViewScreenState extends State<ItemViewScreen> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => HomeScreen(
+                                        builder: (_) => WebMobileFrame(child: HomeScreen(
                                           selectedLocation: cityName, // Pass only the city name
                                         ),
-                                      ),
+                                      ),)
                                     );
                                   },
                                   child: Chip(
@@ -248,8 +250,8 @@ class _ItemViewScreenState extends State<ItemViewScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => OtherUserProfileScreen(userId: widget.uid),
-                          ),
+                            builder: (_) => WebMobileFrame(child: OtherUserProfileScreen(userId: widget.uid),
+                          ),)
                         );
                       },
                       child: Row(
@@ -297,7 +299,7 @@ class _ItemViewScreenState extends State<ItemViewScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => ChatScreen(
+                            builder: (_) => WebMobileFrame(child: ChatScreen(
                               conversation: ChatConversation(
                                 id: widget.uid,
                                 name: widget.donorName,
@@ -310,7 +312,7 @@ class _ItemViewScreenState extends State<ItemViewScreen> {
                                 "Can I pick it up today?",
                               ], // Add your FAQs here
                             ),
-                          ),
+                          ),)
                         );
                       },
                       style: ElevatedButton.styleFrom(

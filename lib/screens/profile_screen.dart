@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'edit_profile_screen.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:newapp/widgets/web_mobile_frame.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -47,7 +48,7 @@ class ProfileScreen extends StatelessWidget {
                   Navigator.pop(context);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+                    MaterialPageRoute(builder: (_) => const WebMobileFrame(child: EditProfileScreen()),)
                   );
                 },
               ),
