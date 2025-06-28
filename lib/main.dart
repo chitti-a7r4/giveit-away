@@ -1,10 +1,12 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_app_check/firebase_app_check.dart'; // Import the App Check package
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/services.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart'; // Import Google Mobile Ads package
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+
 import 'firebase_options.dart';
 import 'screens/home_screen.dart';
 import 'screens/post_screen.dart';
@@ -18,20 +20,24 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize Google Mobile Ads SDK
-  MobileAds.instance.initialize();
+  // Initialize Google Mobile Ads only on mobile platforms
+  if (!kIsWeb) {
+    await MobileAds.instance.initialize();
+  }
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
-      statusBarColor: Colors.black, // 🔲 Sets the background of status bar
-      statusBarIconBrightness: Brightness.light, // ☀️ For white icons on dark bar
+      statusBarColor: Colors.black,
+      statusBarIconBrightness: Brightness.light,
     ),
   );
 
-  // Activate Firebase App Check using Debug provider for testing
-  await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.debug, // Use Debug provider for testing
-  );
+  // Enable Firebase App Check only on Android
+  if (!kIsWeb) {
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.debug, // Use debug provider for Android
+    );
+  }
 
   runApp(const GiveItAwayApp());
 }
@@ -54,8 +60,6 @@ class GiveItAwayApp extends StatelessWidget {
   }
 }
 
-
-/// Check if user is already signed in
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
@@ -65,15 +69,12 @@ class AuthGate extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          // Show splash/loading
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         } else if (snapshot.hasData) {
-          // User is signed in
           return const MainScreen();
         } else {
-          // User is not signed in
           return LoginScreen(
             onLoginSuccess: () {
               Navigator.pushReplacement(

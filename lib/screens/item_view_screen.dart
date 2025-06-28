@@ -156,7 +156,11 @@ class _ItemViewScreenState extends State<ItemViewScreen> {
                                     return const Center(child: CircularProgressIndicator());
                                   },
                                   errorBuilder: (context, error, stackTrace) {
-                                    return Image.asset('assets/images/placeholder.png');
+                                    return Image.network(
+                                      'https://via.placeholder.com/150',
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                    );
                                   },
                                 ),
                               ),
