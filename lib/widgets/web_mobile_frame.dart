@@ -11,7 +11,7 @@ class WebMobileFrame extends StatelessWidget {
     return Center(
       child: Container(
         width: 420,
-        constraints: const BoxConstraints(maxHeight: 900),
+        constraints: const BoxConstraints(maxHeight: 800),
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [
