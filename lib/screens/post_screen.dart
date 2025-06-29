@@ -23,12 +23,19 @@ Future<void> _loadCities() async {
     String rawData;
     
     if (kIsWeb) {
-      // For web deployment, use HTTP request
-      final response = await http.get(Uri.parse('assets/cities.csv'));
-      if (response.statusCode == 200) {
-        rawData = response.body;
-      } else {
-        throw Exception('Failed to load CSV file: ${response.statusCode}');
+      // For web deployment, try different approaches
+      try {
+        // First try using rootBundle (this should work for web too)
+        rawData = await rootBundle.loadString('assets/cities.csv');
+      } catch (e) {
+        _logger.w("rootBundle failed, trying HTTP: $e");
+        // Fallback to HTTP with full path
+        final response = await http.get(Uri.parse('${Uri.base.origin}/assets/cities.csv'));
+        if (response.statusCode == 200) {
+          rawData = response.body;
+        } else {
+          throw Exception('Failed to load CSV file: ${response.statusCode}');
+        }
       }
     } else {
       // For mobile/desktop, use rootBundle
@@ -40,6 +47,8 @@ Future<void> _loadCities() async {
     _logger.i("Cities loaded successfully: ${_cities.length} cities.");
   } catch (e) {
     _logger.e("Error loading cities: $e");
+    // Fallback to empty list or default cities
+    _cities = []; 
   }
 }
 
