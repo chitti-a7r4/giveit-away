@@ -11,6 +11,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:csv/csv.dart';
 import 'package:reorderables/reorderables.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:http/http.dart' as http; // Add this import
 
 final Logger _logger = Logger();
 
@@ -18,7 +20,21 @@ List<String> _cities = [];
 
 Future<void> _loadCities() async {
   try {
-    final rawData = await rootBundle.loadString('assets/cities.csv');
+    String rawData;
+    
+    if (kIsWeb) {
+      // For web deployment, use HTTP request
+      final response = await http.get(Uri.parse('assets/assets/cities.csv'));
+      if (response.statusCode == 200) {
+        rawData = response.body;
+      } else {
+        throw Exception('Failed to load CSV file: ${response.statusCode}');
+      }
+    } else {
+      // For mobile/desktop, use rootBundle
+      rawData = await rootBundle.loadString('assets/cities.csv');
+    }
+    
     List<List<dynamic>> csvData = const CsvToListConverter().convert(rawData);
     _cities = csvData.map((row) => "${row[0]}, ${row[5]}, ${row[3]}").toList(); // City, State, Country
     _logger.i("Cities loaded successfully: ${_cities.length} cities.");
