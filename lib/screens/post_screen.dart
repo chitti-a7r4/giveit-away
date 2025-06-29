@@ -24,7 +24,7 @@ Future<void> _loadCities() async {
     
     if (kIsWeb) {
       // For web deployment, use HTTP request
-      final response = await http.get(Uri.parse('assets/assets/cities.csv'));
+      final response = await http.get(Uri.parse('assets/cities.csv'));
       if (response.statusCode == 200) {
         rawData = response.body;
       } else {
