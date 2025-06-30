@@ -167,7 +167,7 @@ void initState() {
 }
   // Load cities and states from the CSV file
   Future<void> _loadCitiesAndStates() async {
-    final String csvData = await rootBundle.loadString('assets/cities.csv');
+    final String csvData = await rootBundle.loadString('giveitaway.chitti.org/assets/assets/cities.csv');
     final List<List<dynamic>> rows = const CsvToListConverter().convert(csvData);
 
     setState(() {
