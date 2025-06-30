@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'register_screen.dart';
 import 'setup_profile_screen.dart';
+import 'package:newapp/widgets/web_mobile_frame.dart';
+
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -54,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const SetupProfileScreen()),
+            MaterialPageRoute(builder: (_) => WebMobileFrame(child: SetupProfileScreen()),)
           );
         } else {
           widget.onLoginSuccess();
@@ -71,8 +73,8 @@ class _LoginScreenState extends State<LoginScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => RegisterScreen(onRegisterSuccess: widget.onLoginSuccess),
-      ),
+        builder: (_) => WebMobileFrame(child: RegisterScreen(onRegisterSuccess: widget.onLoginSuccess),
+      ),)
     );
   }
 

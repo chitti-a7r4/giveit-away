@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'chat_coversation.dart';
 import 'other_user_profile_screen.dart';
+import 'package:newapp/widgets/web_mobile_frame.dart';
+
 
 class ChatScreen extends StatefulWidget {
   final ChatConversation conversation;
@@ -165,8 +167,8 @@ class ChatScreenState extends State<ChatScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => OtherUserProfileScreen(userId: widget.conversation.id),
-                  ),
+                    builder: (_) => WebMobileFrame(child: OtherUserProfileScreen(userId: widget.conversation.id),
+                  ),)
                 );
               },
               child: Row(

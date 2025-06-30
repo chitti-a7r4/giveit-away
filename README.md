@@ -48,10 +48,16 @@ To reduce waste and foster a sharing community by connecting people who want to 
 
 ## 📱 Screenshots
 
+
 <img src="https://github.com/user-attachments/assets/46162a60-8fa5-4e3b-b007-d34b1cd64163" width="300" />
 <img src="https://github.com/user-attachments/assets/9c83d7f5-8e99-41c9-a02b-f5620f599ccd" width="300" />
 <img src="https://github.com/user-attachments/assets/1b067936-9f06-4b90-b800-8e259b266c50" width="300" />
 <img src="https://github.com/user-attachments/assets/c24dde70-5fe5-4023-8393-d95d8970fa7b" width="300" />
+<img src="https://github.com/user-attachments/assets/384881b0-52eb-4ade-b88a-5340c96b8747" width="300" />
+<img src="https://github.com/user-attachments/assets/711ba2a8-7ba3-4385-af8f-8714e283c3dd" width="300" />
+
+
+
 
 
 
@@ -70,14 +76,6 @@ To reduce waste and foster a sharing community by connecting people who want to 
   - Salomon Bottom Bar
   - Custom Cards
   - Material Design
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Flutter (latest version)
-- Firebase account
-- Android Studio or VS Code
-- Git
 
 ### Installation
 
