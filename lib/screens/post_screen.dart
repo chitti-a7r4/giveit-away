@@ -21,16 +21,16 @@ List<String> _cities = [];
 Future<void> _loadCities() async {
   try {
     String rawData;
-    
+
     if (kIsWeb) {
       // For web deployment, try different approaches
       try {
         // First try using rootBundle (this should work for web too)
-        rawData = await rootBundle.loadString('assets/assets/cities.csv');
+        rawData = await rootBundle.loadString('assets/cities.csv');
       } catch (e) {
         _logger.w("rootBundle failed, trying HTTP: $e");
         // Fallback to HTTP with full path
-        final response = await http.get(Uri.parse('${Uri.base.origin}/assets/cities.csv'));
+        final response = await http.get(Uri.parse('assets/cities.csv'));
         if (response.statusCode == 200) {
           rawData = response.body;
         } else {
@@ -41,14 +41,17 @@ Future<void> _loadCities() async {
       // For mobile/desktop, use rootBundle
       rawData = await rootBundle.loadString('assets/cities.csv');
     }
-    
+
     List<List<dynamic>> csvData = const CsvToListConverter().convert(rawData);
-    _cities = csvData.map((row) => "${row[0]}, ${row[5]}, ${row[3]}").toList(); // City, State, Country
+    _cities =
+        csvData
+            .map((row) => "${row[0]}, ${row[5]}, ${row[3]}")
+            .toList(); // City, State, Country
     _logger.i("Cities loaded successfully: ${_cities.length} cities.");
   } catch (e) {
     _logger.e("Error loading cities: $e");
     // Fallback to empty list or default cities
-    _cities = []; 
+    _cities = [];
   }
 }
 
@@ -66,7 +69,8 @@ class _PostScreenState extends State<PostScreen> {
   final TextEditingController _locationController = TextEditingController();
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  final List<File> _selectedImages = []; // Replace individual image variables with a list
+  final List<File> _selectedImages =
+      []; // Replace individual image variables with a list
   final picker = ImagePicker();
 
   String? _category;
@@ -116,8 +120,12 @@ class _PostScreenState extends State<PostScreen> {
         return null;
       }
       img.Image compressedImage = img.copyResize(imageFile, width: 800);
-      List<int> compressedImageBytes = img.encodeJpg(compressedImage, quality: 80);
-      File compressedFile = File(image.path)..writeAsBytesSync(compressedImageBytes);
+      List<int> compressedImageBytes = img.encodeJpg(
+        compressedImage,
+        quality: 80,
+      );
+      File compressedFile = File(image.path)
+        ..writeAsBytesSync(compressedImageBytes);
       return compressedFile;
     } catch (e) {
       _logger.e("Error compressing image: $e");
@@ -164,9 +172,11 @@ class _PostScreenState extends State<PostScreen> {
   Future<void> _getLocation() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
         permission = await Geolocator.requestPermission();
-        if (permission != LocationPermission.always && permission != LocationPermission.whileInUse) {
+        if (permission != LocationPermission.always &&
+            permission != LocationPermission.whileInUse) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Location permission denied.")),
           );
@@ -174,15 +184,22 @@ class _PostScreenState extends State<PostScreen> {
         }
       }
 
-      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
       Placemark place = placemarks[0];
-      String address = "${place.locality}, ${place.administrativeArea}, ${place.country}";
+      String address =
+          "${place.locality}, ${place.administrativeArea}, ${place.country}";
 
       _logger.i("Fetched location: $address");
 
       setState(() {
-        _locationController.text = address; // This will now reflect in the Autocomplete field
+        _locationController.text =
+            address; // This will now reflect in the Autocomplete field
       });
     } catch (e) {
       _logger.e("Error getting location: $e");
@@ -218,7 +235,10 @@ class _PostScreenState extends State<PostScreen> {
 
       // Fetch user details
       DocumentSnapshot userDoc =
-          await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
       String userName = userDoc['name'] ?? 'Anonymous';
       String profileImageUrl = userDoc['imageUrl'] ?? '';
 
@@ -255,7 +275,9 @@ class _PostScreenState extends State<PostScreen> {
       } catch (e) {
         _logger.e("Error saving post to Firestore: $e");
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Error posting item. Please try again.")),
+          const SnackBar(
+            content: Text("Error posting item. Please try again."),
+          ),
         );
       }
     }
@@ -353,7 +375,11 @@ class _PostScreenState extends State<PostScreen> {
                             shape: BoxShape.circle,
                             color: Colors.red,
                           ),
-                          child: const Icon(Icons.close, size: 20, color: Colors.white),
+                          child: const Icon(
+                            Icons.close,
+                            size: 20,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
@@ -418,8 +444,11 @@ class _PostScreenState extends State<PostScreen> {
                   prefixIcon: Icon(Icons.title),
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Please enter a title' : null,
+                validator:
+                    (value) =>
+                        value == null || value.isEmpty
+                            ? 'Please enter a title'
+                            : null,
               ),
               const SizedBox(height: 20),
               TextFormField(
@@ -430,8 +459,11 @@ class _PostScreenState extends State<PostScreen> {
                   prefixIcon: Icon(Icons.description),
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Please enter a description' : null,
+                validator:
+                    (value) =>
+                        value == null || value.isEmpty
+                            ? 'Please enter a description'
+                            : null,
               ),
               const SizedBox(height: 20),
               DropdownButtonFormField<String>(
@@ -441,55 +473,66 @@ class _PostScreenState extends State<PostScreen> {
                   prefixIcon: Icon(Icons.category),
                   border: OutlineInputBorder(),
                 ),
-                items: _categories.map((category) {
-                  return DropdownMenuItem<String>(
-                    value: category['name'],
-                    child: Row(
-                      children: [
-                        Icon(category['icon'], size: 18, color: Colors.grey[700]),
-                        const SizedBox(width: 8),
-                        Text(category['name']),
-                      ],
-                    ),
-                  );
-                }).toList(),
+                items:
+                    _categories.map((category) {
+                      return DropdownMenuItem<String>(
+                        value: category['name'],
+                        child: Row(
+                          children: [
+                            Icon(
+                              category['icon'],
+                              size: 18,
+                              color: Colors.grey[700],
+                            ),
+                            const SizedBox(width: 8),
+                            Text(category['name']),
+                          ],
+                        ),
+                      );
+                    }).toList(),
                 onChanged: (newCategory) {
                   setState(() {
                     _category = newCategory;
                   });
                 },
-                validator: (value) =>
-                    value == null ? 'Please select a category' : null,
+                validator:
+                    (value) =>
+                        value == null ? 'Please select a category' : null,
               ),
               const SizedBox(height: 20),
               _isCitiesLoaded
                   ? Autocomplete<String>(
-                      optionsBuilder: (TextEditingValue textEditingValue) {
-                        if (textEditingValue.text.isEmpty) {
-                          return const Iterable<String>.empty();
-                        }
-                        return _cities.where((city) =>
-                            city.toLowerCase().contains(textEditingValue.text.toLowerCase()));
-                      },
-                      onSelected: (String selection) {
-                        _locationController.text = selection;
-                      },
-                      fieldViewBuilder: (BuildContext context,
-                          TextEditingController textEditingController,
-                          FocusNode focusNode,
-                          VoidCallback onFieldSubmitted) {
-                        textEditingController.text = _locationController.text;
-                        return TextFormField(
-                          controller: textEditingController,
-                          focusNode: focusNode,
-                          decoration: const InputDecoration(
-                            labelText: 'Location',
-                            prefixIcon: Icon(Icons.location_on_outlined),
-                            border: OutlineInputBorder(),
-                          ),
-                        );
-                      },
-                    )
+                    optionsBuilder: (TextEditingValue textEditingValue) {
+                      if (textEditingValue.text.isEmpty) {
+                        return const Iterable<String>.empty();
+                      }
+                      return _cities.where(
+                        (city) => city.toLowerCase().contains(
+                          textEditingValue.text.toLowerCase(),
+                        ),
+                      );
+                    },
+                    onSelected: (String selection) {
+                      _locationController.text = selection;
+                    },
+                    fieldViewBuilder: (
+                      BuildContext context,
+                      TextEditingController textEditingController,
+                      FocusNode focusNode,
+                      VoidCallback onFieldSubmitted,
+                    ) {
+                      textEditingController.text = _locationController.text;
+                      return TextFormField(
+                        controller: textEditingController,
+                        focusNode: focusNode,
+                        decoration: const InputDecoration(
+                          labelText: 'Location',
+                          prefixIcon: Icon(Icons.location_on_outlined),
+                          border: OutlineInputBorder(),
+                        ),
+                      );
+                    },
+                  )
                   : const Center(child: CircularProgressIndicator()),
               const SizedBox(height: 10),
               Align(
