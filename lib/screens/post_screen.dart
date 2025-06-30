@@ -23,14 +23,11 @@ Future<void> _loadCities() async {
     String rawData;
 
     if (kIsWeb) {
-      // For web deployment, try different approaches
       try {
-        // First try using rootBundle (this should work for web too)
         rawData = await rootBundle.loadString('assets/cities.csv');
       } catch (e) {
         _logger.w("rootBundle failed, trying HTTP: $e");
-        // Fallback to HTTP with full path
-final response = await http.get(Uri.parse('${Uri.base.origin}/assets/cities.csv'));
+        final response = await http.get(Uri.parse('${Uri.base.origin}/assets/cities.csv'));
         if (response.statusCode == 200) {
           rawData = response.body;
         } else {
@@ -38,22 +35,21 @@ final response = await http.get(Uri.parse('${Uri.base.origin}/assets/cities.csv'
         }
       }
     } else {
-      // For mobile/desktop, use rootBundle
       rawData = await rootBundle.loadString('assets/cities.csv');
     }
 
     List<List<dynamic>> csvData = const CsvToListConverter().convert(rawData);
-    _cities =
-        csvData
-            .map((row) => "${row[0]}, ${row[5]}, ${row[3]}")
-            .toList(); // City, State, Country
+
+    // ✅ Skip header row
+    _cities = csvData.skip(1).map((row) => "${row[0]}, ${row[5]}, ${row[3]}").toList();
+
     _logger.i("Cities loaded successfully: ${_cities.length} cities.");
   } catch (e) {
     _logger.e("Error loading cities: $e");
-    // Fallback to empty list or default cities
     _cities = [];
   }
 }
+
 
 class PostScreen extends StatefulWidget {
   const PostScreen({super.key});
