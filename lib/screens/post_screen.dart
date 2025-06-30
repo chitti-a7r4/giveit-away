@@ -17,68 +17,41 @@ import 'package:http/http.dart' as http; // Add this import
 final Logger _logger = Logger();
 
 List<String> _cities = [];
+
 Future<void> _loadCities() async {
   try {
     String rawData;
-    
+
     if (kIsWeb) {
-      // For web deployment, try multiple approaches
+      // For web deployment, try different approaches
       try {
-        // Method 1: Try rootBundle first
+        // First try using rootBundle (this should work for web too)
         rawData = await rootBundle.loadString('assets/cities.csv');
-        _logger.i("Cities loaded via rootBundle");
-      } catch (e1) {
-        _logger.w("rootBundle failed: $e1");
-        try {
-          // Method 2: Try relative HTTP path
-          final response = await http.get(Uri.parse('assets/cities.csv'));
-          if (response.statusCode == 200) {
-            rawData = response.body;
-            _logger.i("Cities loaded via HTTP relative path");
-          } else {
-            throw Exception('HTTP relative failed: ${response.statusCode}');
-          }
-        } catch (e2) {
-          _logger.w("HTTP relative failed: $e2");
-          try {
-            // Method 3: Try absolute HTTP path
-            final baseUrl = Uri.base.toString();
-            final assetUrl = baseUrl.endsWith('/') 
-                ? '${baseUrl}assets/cities.csv' 
-                : '$baseUrl/assets/cities.csv';
-            final response = await http.get(Uri.parse(assetUrl));
-            if (response.statusCode == 200) {
-              rawData = response.body;
-              _logger.i("Cities loaded via HTTP absolute path");
-            } else {
-              throw Exception('HTTP absolute failed: ${response.statusCode}');
-            }
-          } catch (e3) {
-            _logger.e("All web loading methods failed: $e3");
-            throw Exception('Failed to load cities on web platform');
-          }
+      } catch (e) {
+        _logger.w("rootBundle failed, trying HTTP: $e");
+        // Fallback to HTTP with full path
+final response = await http.get(Uri.parse('${Uri.base.origin}/assets/cities.csv'));
+        if (response.statusCode == 200) {
+          rawData = response.body;
+        } else {
+          throw Exception('Failed to load CSV file: ${response.statusCode}');
         }
       }
     } else {
       // For mobile/desktop, use rootBundle
       rawData = await rootBundle.loadString('assets/cities.csv');
-      _logger.i("Cities loaded via rootBundle (mobile/desktop)");
     }
-    
+
     List<List<dynamic>> csvData = const CsvToListConverter().convert(rawData);
-    _cities = csvData.map((row) => "${row[0]}, ${row[5]}, ${row[3]}").toList();
-    _logger.i("Cities parsed successfully: ${_cities.length} cities.");
+    _cities =
+        csvData
+            .map((row) => "${row[0]}, ${row[5]}, ${row[3]}")
+            .toList(); // City, State, Country
+    _logger.i("Cities loaded successfully: ${_cities.length} cities.");
   } catch (e) {
     _logger.e("Error loading cities: $e");
-    // Fallback to a few default cities if loading fails
-    _cities = [
-      "New York, NY, United States",
-      "Los Angeles, CA, United States", 
-      "London, England, United Kingdom",
-      "Paris, Île-de-France, France",
-      "Tokyo, Tokyo, Japan"
-    ];
-    _logger.w("Using fallback cities list");
+    // Fallback to empty list or default cities
+    _cities = [];
   }
 }
 
