@@ -26,7 +26,7 @@ Future<void> _loadCities() async {
       // For web deployment, try different approaches
       try {
         // First try using rootBundle (this should work for web too)
-        rawData = await rootBundle.loadString('http://giveitaway.chitti.org/assets/assets/cities.csv');
+        rawData = await rootBundle.loadString('assets/assets/cities.csv');
       } catch (e) {
         _logger.w("rootBundle failed, trying HTTP: $e");
         // Fallback to HTTP with full path

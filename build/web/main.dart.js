@@ -31651,7 +31651,7 @@ s=q}while(true)switch(s){case 0:q=3
 o=null
 q=7
 s=10
-return A.y($.CC().a38("http://giveitaway.chitti.org/assets/assets/cities.csv"),$async$a9z)
+return A.y($.CC().a38("assets/assets/cities.csv"),$async$a9z)
 case 10:o=b
 q=3
 s=9
