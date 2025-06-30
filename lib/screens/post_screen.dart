@@ -37,7 +37,7 @@ Future<void> _loadCities() async {
     if (kIsWeb) {
       // For web, try to load from assets first
       try {
-        String rawData = await rootBundle.loadString('assets/cities.csv');
+        String rawData = await rootBundle.loadString('${Uri.base.origin}/assets/cities.csv');
         List<List<dynamic>> csvData = const CsvToListConverter().convert(rawData);
         _cities = csvData.skip(1).map((row) => "${row[0]}, ${row[5]}, ${row[3]}").toList();
         _logger.i("Cities loaded from CSV: ${_cities.length} cities.");
