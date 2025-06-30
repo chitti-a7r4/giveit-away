@@ -12,44 +12,58 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:csv/csv.dart';
 import 'package:reorderables/reorderables.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:http/http.dart' as http; // Add this import
+// Add this import
 
 final Logger _logger = Logger();
 
 List<String> _cities = [];
+// Add this as a static list in your class
+ final List<String> _hardcodedCities = [
+  "Mumbai, Maharashtra, India",
+  "Delhi, Delhi, India",
+  "Bangalore, Karnataka, India",
+  "Hyderabad, Telangana, India",
+  "Chennai, Tamil Nadu, India",
+  "Kolkata, West Bengal, India",
+  "Pune, Maharashtra, India",
+  "Ahmedabad, Gujarat, India",
+  "Jaipur, Rajasthan, India",
+  "Surat, Gujarat, India",
+  // ... add more cities as needed
+];
 
 Future<void> _loadCities() async {
   try {
-    String rawData;
-
     if (kIsWeb) {
+      // For web, try to load from assets first
       try {
-        rawData = await rootBundle.loadString('assets/cities.csv');
+        String rawData = await rootBundle.loadString('assets/cities.csv');
+        List<List<dynamic>> csvData = const CsvToListConverter().convert(rawData);
+        _cities = csvData.skip(1).map((row) => "${row[0]}, ${row[5]}, ${row[3]}").toList();
+        _logger.i("Cities loaded from CSV: ${_cities.length} cities.");
+        return;
       } catch (e) {
-        _logger.w("rootBundle failed, trying HTTP: $e");
-        final response = await http.get(Uri.parse('${Uri.base.origin}/assets/cities.csv'));
-        if (response.statusCode == 200) {
-          rawData = response.body;
-        } else {
-          throw Exception('Failed to load CSV file: ${response.statusCode}');
-        }
+        _logger.w("Failed to load CSV, using hardcoded cities: $e");
+        _cities = _hardcodedCities;
+        return;
       }
     } else {
-      rawData = await rootBundle.loadString('assets/cities.csv');
+      // For mobile, try CSV first, then fallback to hardcoded
+      try {
+        String rawData = await rootBundle.loadString('assets/cities.csv');
+        List<List<dynamic>> csvData = const CsvToListConverter().convert(rawData);
+        _cities = csvData.skip(1).map((row) => "${row[0]}, ${row[5]}, ${row[3]}").toList();
+        _logger.i("Cities loaded from CSV: ${_cities.length} cities.");
+      } catch (e) {
+        _logger.w("Failed to load CSV, using hardcoded cities: $e");
+        _cities = _hardcodedCities;
+      }
     }
-
-    List<List<dynamic>> csvData = const CsvToListConverter().convert(rawData);
-
-    // ✅ Skip header row
-    _cities = csvData.skip(1).map((row) => "${row[0]}, ${row[5]}, ${row[3]}").toList();
-
-    _logger.i("Cities loaded successfully: ${_cities.length} cities.");
   } catch (e) {
     _logger.e("Error loading cities: $e");
-    _cities = [];
+    _cities = _hardcodedCities;
   }
 }
-
 
 class PostScreen extends StatefulWidget {
   const PostScreen({super.key});
